@@ -1,0 +1,8 @@
+{
+  "name": "darkwinter-github-video-tools",
+  "private": true,
+  "description": "Pins the HyperFrames CLI used by the skills in .claude/skills so `npx hyperframes` resolves to a known version instead of the latest release.",
+  "devDependencies": {
+    "hyperframes": "0.8.117"
+  }
+}
