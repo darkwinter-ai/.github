@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>darkwinter.ai Teaser (HyperFrames)</title>
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Orbitron"; src: url("assets/fonts/orbitron.woff2") format("woff2"); font-weight: 400 900; }
+      @font-face { font-family: "Oxanium"; src: url("assets/fonts/oxanium.woff2") format("woff2"); font-weight: 200 800; }
+      @font-face { font-family: "ShareTech"; src: url("assets/fonts/sharetech.woff2") format("woff2"); }
+
+      :root {
+        --bg: #0b0612; --bg2: #1a0b2b; --pink: #ff2e88; --pink2: #ff6fb5; --lilac: #c9a3ff;
+        --blue: #2f5bff; --blue2: #5a86ff; --ice: #d6e2ff; --violet: #7a3cff; --dim: #7f86d9;
+      }
+      body { margin: 0; background: #000; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+      .layer { position: absolute; inset: 0; }
+      .scene { position: absolute; inset: 0; }
+      #bgfill { background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 45%, #12081f 75%, var(--bg) 100%); }
+      #shake, #cam { position: absolute; inset: 0; transform-origin: 540px 966px; }
+      canvas.layer { width: 1080px; height: 1920px; }
+      #city-glow { filter: blur(9px) brightness(1.8); mix-blend-mode: screen; opacity: 0.85; }
+
+      /* core */
+      #core { position: absolute; left: 330px; top: 756px; width: 420px; height: 420px; opacity: 0; transform-origin: 210px 210px; }
+      #core-pulse { position: absolute; inset: 0; transform-origin: 210px 210px; }
+      #core-pulse .halo { position: absolute; inset: 0; border-radius: 50%;
+        background: radial-gradient(circle, #fff 0%, var(--ice) 6%, rgba(90,134,255,.45) 24%, rgba(47,91,255,0) 70%); }
+      #core-pulse .flare { position: absolute; left: -440px; top: 198px; width: 1300px; height: 24px; border-radius: 50%;
+        background: radial-gradient(ellipse, rgba(214,226,255,.95) 0%, rgba(90,134,255,.35) 35%, rgba(90,134,255,0) 70%); }
+      #core-pulse .dot { position: absolute; left: 201px; top: 201px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 18px 6px #fff; }
+
+      /* scene 1 */
+      #console { position: absolute; left: 70px; top: 200px; font: 34px/56px "ShareTech", monospace; white-space: pre; }
+      #console .ln { height: 56px; }
+      #cursor { display: inline-block; width: 18px; height: 32px; background: var(--pink); vertical-align: -6px; margin-left: 8px; }
+      #ring { position: absolute; left: 440px; top: 866px; width: 200px; height: 200px; border-radius: 50%; border: 6px solid var(--ice); box-sizing: border-box; opacity: 0; }
+      #horizon { position: absolute; left: 0; top: 979px; width: 1080px; height: 3px; background: var(--pink); box-shadow: 0 0 12px var(--pink); opacity: .8; }
+
+      /* scene 2 */
+      #headline { position: absolute; left: 0; width: 1080px; top: 640px; display: flex; flex-direction: column; align-items: center; }
+      .gstack { display: grid; }
+      .gstack > .row { grid-area: 1 / 1; font-family: "Orbitron", sans-serif; font-weight: 700; white-space: pre; text-align: center; }
+      .gstack .base { z-index: 2; color: #fff; text-shadow: 0 0 22px rgba(255,46,136,.75), 0 0 4px rgba(255,255,255,.6); }
+      .gstack .warm { z-index: 1; color: var(--pink); mix-blend-mode: screen; opacity: 0; }
+      .gstack .cool { z-index: 1; color: #3de1ff; mix-blend-mode: screen; opacity: 0; }
+      .ch { display: inline-block; text-align: center; }
+      #ticker { position: absolute; left: 0; width: 1080px; top: 1110px; text-align: center; font: 28px "ShareTech", monospace; color: var(--dim); white-space: pre; }
+      #beam { position: absolute; left: 0; top: 0; width: 1080px; height: 76px; opacity: 0;
+        background: linear-gradient(180deg, rgba(255,46,136,0) 0%, rgba(255,111,181,.7) 92%, #fff 96%, #fff 100%); }
+
+      /* emblem */
+      #emblem { opacity: 0; }
+      #emblem svg { position: absolute; inset: 0; width: 1080px; height: 1920px; overflow: visible; }
+      .neon path, .neon line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      #g-pink { filter: drop-shadow(0 0 6px rgba(255,46,136,.9)) drop-shadow(0 0 22px rgba(255,46,136,.6)); }
+      #g-blue { filter: drop-shadow(0 0 8px rgba(90,134,255,.8)); }
+
+      /* rails */
+      .rail { position: absolute; left: 0; height: 3px; transform-origin: 540px 0; }
+      .trace { position: absolute; height: 2px; }
+
+      /* scene 3 copy */
+      .copy { position: absolute; left: 0; width: 1080px; text-align: center; white-space: pre; }
+      #top-copy { top: 344px; font: 500 60px/80px "Orbitron", sans-serif; color: #fff; text-shadow: 0 0 20px rgba(201,163,255,.7); }
+      #bot-copy { top: 1350px; font: 500 46px/60px "Oxanium", sans-serif; color: var(--ice); letter-spacing: 2px; }
+
+      /* scene 4 */
+      #whiteout { position: absolute; left: 540px; top: 966px; width: 0; height: 0; }
+      #whiteout .disc { position: absolute; left: -1400px; top: -1400px; width: 2800px; height: 2800px; border-radius: 50%; opacity: 0;
+        background: radial-gradient(circle, #fff 0%, #fff 22%, rgba(214,226,255,.9) 50%, rgba(90,134,255,0) 72%); }
+
+      /* scene 5 */
+      #wordmark-wrap { position: absolute; left: 0; width: 1080px; top: 96px; display: flex; flex-direction: column; align-items: center; }
+      #wordmark { font-family: "Orbitron", sans-serif; font-weight: 500; color: #fff; white-space: pre; line-height: 1.2;
+        text-shadow: 0 0 28px rgba(201,163,255,.9), 0 0 6px rgba(255,255,255,.5); }
+      #underline { height: 3px; background: rgba(201,163,255,.85); box-shadow: 0 0 10px rgba(201,163,255,.8); transform-origin: 0 0; margin-top: 8px; }
+      #datablock { position: absolute; top: 300px; font: 21px/30px "ShareTech", monospace; color: var(--dim); white-space: pre; opacity: 0; }
+      #tagline { top: 1540px; font: 500 46px/60px "Oxanium", sans-serif; color: #fff; letter-spacing: 1px; text-shadow: 0 0 22px rgba(90,134,255,.85); }
+      #subline { top: 1626px; font: 22px/30px "ShareTech", monospace; color: var(--dim); letter-spacing: 3px; }
+
+      /* post */
+      #scan { background: repeating-linear-gradient(180deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,.22) 2px, rgba(0,0,0,.12) 4px); }
+      #roll { position: absolute; left: 0; top: 0; width: 1080px; height: 320px;
+        background: linear-gradient(180deg, rgba(200,190,255,0), rgba(200,190,255,.035), rgba(200,190,255,0)); }
+      #grain { opacity: .09; mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>");
+        background-size: 256px 256px; }
+      #vignette { background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, rgba(0,0,0,.58) 100%); }
+      .tear { position: absolute; left: 0; width: 1080px; mix-blend-mode: screen; opacity: 0; }
+      #flash { background: #fff; opacity: 0; }
+      .crtbar { position: absolute; background: #000; }
+      #crt-top { left: 0; top: 0; width: 1080px; height: 960px; transform-origin: 0 0; }
+      #crt-bot { left: 0; top: 960px; width: 1080px; height: 960px; transform-origin: 0 100%; }
+      #crt-left { left: 0; top: 0; width: 540px; height: 1920px; transform-origin: 0 0; }
+      #crt-right { left: 540px; top: 0; width: 540px; height: 1920px; transform-origin: 100% 0; }
+      #crt-line { position: absolute; left: 0; top: 930px; width: 1080px; height: 60px; transform-origin: 540px 30px; opacity: 0;
+        background: linear-gradient(180deg, rgba(255,46,136,0), #fff 50%, rgba(255,46,136,0)); }
+      #crt-dot { position: absolute; left: 530px; top: 950px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 0 16px #fff; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1080" data-height="1920" data-duration="20" data-fps="60">
+      <div id="bgfill" class="layer"></div>
+
+      <div id="shake" data-layout-allow-overflow>
+        <div id="cam">
+          <canvas id="city" class="layer" width="1080" height="1920"></canvas>
+          <canvas id="city-glow" class="layer" width="1080" height="1920"></canvas>
+
+          <div id="rails" class="layer">
+            <div class="rail" id="rail-0" style="top:1268px;width:1080px;background:rgba(255,46,136,.95);box-shadow:0 0 10px #ff2e88"></div>
+            <div class="rail" id="rail-1" style="top:1300px;left:594px;width:378px;transform-origin:-54px 0;background:rgba(255,46,136,.35)"></div>
+            <div class="rail" id="rail-2" style="top:1440px;left:22px;width:1026px;transform-origin:518px 0;background:rgba(255,111,181,.75);box-shadow:0 0 10px #ff6fb5"></div>
+            <div class="rail" id="rail-3" style="top:1475px;left:324px;width:324px;transform-origin:216px 0;background:rgba(90,134,255,.4)"></div>
+            <div class="trace" id="trace-0" style="left:0;top:1760px;width:620px;background:rgba(90,134,255,.45)"></div>
+            <div class="trace" id="trace-1" style="left:0;top:1786px;width:560px;background:rgba(90,134,255,.45)"></div>
+            <div class="trace" id="trace-2" style="left:180px;top:1860px;width:900px;background:rgba(255,46,136,.5)"></div>
+          </div>
+
+          <div id="emblem" class="layer">
+            <svg viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+              <defs><clipPath id="tunnel-clip"><polygon id="tunnel-clip-poly" points="0,0" /></clipPath></defs>
+              <g id="g-blue" class="neon">
+                <g id="tunnel-floor" clip-path="url(#tunnel-clip)"></g>
+                <g id="tunnel"></g>
+                <path id="tri-inner" fill="none" />
+              </g>
+              <g id="g-pink" class="neon"></g>
+            </svg>
+          </div>
+
+          <div id="core"><div id="core-pulse"><div class="flare"></div><div class="halo"></div><div class="dot"></div></div></div>
+
+          <!-- I · SIGNAL -->
+          <section id="sc-signal" class="clip scene" data-start="0" data-duration="4" data-track-index="1">
+            <div id="console"></div>
+            <div id="ring"></div>
+            <div id="horizon"></div>
+          </section>
+
+          <!-- II · CHAOS -->
+          <section id="sc-chaos" class="clip scene" data-start="4" data-duration="4" data-track-index="1">
+            <div id="headline"></div>
+            <div id="ticker"></div>
+            <div id="beam"></div>
+          </section>
+
+          <!-- III · SYSTEM -->
+          <section id="sc-system" class="clip scene" data-start="8" data-duration="6.6" data-track-index="1">
+            <div id="system-copy" class="layer">
+              <div id="top-copy" class="copy"></div>
+              <div id="bot-copy" class="copy"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- IV · RUSH (outside the camera so the zoom-through does not scale it) -->
+      <section id="sc-rush" class="clip scene" data-start="14.15" data-duration="1.85" data-track-index="2">
+        <canvas id="hyper" class="layer" width="1080" height="1920"></canvas>
+        <div id="whiteout" data-layout-allow-overflow><div class="disc"></div></div>
+      </section>
+
+      <!-- V · LOCKUP -->
+      <section id="sc-lockup" class="clip scene" data-start="16" data-duration="4" data-track-index="3">
+        <div id="wordmark-wrap"><div id="wordmark"></div><div id="underline"></div></div>
+        <div id="datablock"></div>
+        <div id="tagline" class="copy"></div>
+        <div id="subline" class="copy"></div>
+      </section>
+
+      <div id="post" class="layer">
+        <div id="tears" class="layer"></div>
+        <div id="scan" class="layer"></div>
+        <div id="roll"></div>
+        <div id="grain" class="layer"></div>
+        <div id="vignette" class="layer"></div>
+        <div id="flash" class="layer"></div>
+        <div id="crt" class="layer">
+          <div id="crt-top" class="crtbar"></div><div id="crt-bot" class="crtbar"></div>
+          <div id="crt-left" class="crtbar"></div><div id="crt-right" class="crtbar"></div>
+          <div id="crt-line"></div><div id="crt-dot"></div>
+        </div>
+      </div>
+
+      <audio id="score" src="assets/soundtrack.wav" data-start="0" data-duration="20" data-track-index="9" data-volume="1"></audio>
+    </div>
+
+    <script>
+      /* darkwinter.ai teaser — HyperFrames rebuild. One paused GSAP timeline drives everything.
+         Discrete DOM moves are GSAP tweens; per-frame procedural state (glyph decode, LED city,
+         tunnel, hyperspace, shake, grain) is a pure function of tl.time() in one driver onUpdate,
+         so any seek reproduces the same frame. */
+      const W = 1080, H = 1920, CX = 540, CY = 966, DUR = 20;
+      const K = { pink: "#ff2e88", pink2: "#ff6fb5", blue: "#2f5bff", blue2: "#5a86ff", ice: "#d6e2ff", violet: "#7a3cff", lilac: "#c9a3ff", dim: "#7f86d9", white: "#ffffff" };
+      const TAU = Math.PI * 2;
+      const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const prog = (t, a, b) => clamp((t - a) / (b - a));
+      const ease = { inCubic: gsap.parseEase("power2.in"), outCubic: gsap.parseEase("power2.out"), inOutCubic: gsap.parseEase("power2.inOut"),
+        outExpo: gsap.parseEase("expo.out"), inExpo: gsap.parseEase("expo.in") };
+      function hash(n) { n |= 0; n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); n ^= n >>> 16; return (n >>> 0) / 4294967296; }
+      const h2 = (a, b) => hash(Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263));
+      const h3 = (a, b, c) => hash(Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) + Math.imul(c | 0, 1274126177));
+      const rgba = (h, a) => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; };
+
+      /* ---------- glyph decode (pure) ---------- */
+      const GLY = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#$%&*+=<>/\\|_[]{}";
+      function decode(str, t, t0, { stagger = .03, dur = .22, seed = 1, from = null, out = null } = {}) {
+        const fr = Math.floor(t * 30); let s = "";
+        const n = Math.max(str.length, from ? from.length : 0);
+        for (let i = 0; i < n; i++) {
+          const ch = str[i] ?? " ", ti = t0 + i * stagger;
+          if (t < ti) s += from ? (from[i] ?? " ") : " ";
+          else if (t < ti + dur) s += (ch === " " && !(from && from[i] && from[i] !== " ")) ? " " : GLY[Math.floor(h3(i, fr, seed) * GLY.length)];
+          else s += ch;
+        }
+        if (out && t >= out[0]) {
+          let o = "";
+          for (let i = 0; i < s.length; i++) { const to = out[0] + i * (out[1] ?? .02); o += t < to ? s[i] : t < to + .15 ? (s[i] === " " ? " " : GLY[Math.floor(h3(i, fr, seed + 9) * GLY.length)]) : " "; }
+          s = o;
+        }
+        return s;
+      }
+
+      /* ---------- fixed-slot text: each char gets the width of the char it resolves to, so scrambling never shifts layout ---------- */
+      const mctx = document.createElement("canvas").getContext("2d");
+      function measure(font, ch) { mctx.font = font; return mctx.measureText(ch).width; }
+      class Slots {
+        constructor(el, font, len) {
+          this.font = font; this.spans = []; this.layoutFor = null;
+          for (let i = 0; i < len; i++) { const s = document.createElement("span"); s.className = "ch"; s.setAttribute("data-layout-allow-overlap", ""); el.appendChild(s); this.spans.push(s); }
+        }
+        layout(final, spacing = 0) {
+          if (this.layoutFor === final) return; this.layoutFor = final;
+          this.spans.forEach((s, i) => {
+            const ch = final[i];
+            s.style.display = ch === undefined ? "none" : "inline-block";
+            s.style.width = ch === undefined ? "0px" : (measure(this.font, ch) + spacing) + "px";
+          });
+        }
+        show(str) { this.spans.forEach((s, i) => { const c = str[i] ?? " "; const v = c === " " ? " " : c; if (s.textContent !== v) s.textContent = v; }); }
+      }
+      // A text track is a list of segments; each segment decodes in from the previous one's text.
+      function track(el, font, segs, { out = null, spacing = 0 } = {}) {
+        const len = Math.max(...segs.map(s => s.str.length));
+        const slots = new Slots(el, font, len);
+        return { slots, update(t) {
+          let k = -1; segs.forEach((s, i) => { if (t >= s.t0) k = i; });
+          const seg = segs[Math.max(0, k)], prev = k > 0 ? segs[k - 1].str : null;
+          slots.layout(seg.str, spacing);
+          slots.show(k < 0 ? "" : decode(seg.str, t, seg.t0, { stagger: seg.stagger ?? .03, dur: seg.dur ?? .22, seed: seg.seed ?? 1, from: prev, out: k === segs.length - 1 ? out : null }));
+        } };
+      }
+
+      /* ---------- timing shared with the score ---------- */
+      const BEAT = .5;
+      const HITS = [[2.0, .9], [4.0, 1], [6.0, .6], [7.0, .9], [8.0, 1.1], [12.0, .5], [16.0, 1.4]];
+      const GLITCH = [[4.0, 1], [4.5, .45], [5.0, .8], [5.25, .35], [5.5, .7], [5.75, .45], [6.0, .9], [6.5, .45], [6.75, .3], [7.0, 1.1],
+        [8.0, .55], [11.0, .22], [12.0, .5], [13.0, .3], [13.5, .4], [13.75, .55], [14.0, .7], [16.0, .9], [17.5, .7], [18.6, .3], [19.4, .5]];
+      function glitchAmt(t) {
+        const f = Math.floor(t * 60);
+        let g = GLITCH.reduce((s, [h, a]) => { const d = t - h; return d >= 0 && d < .4 ? s + a * Math.exp(-d * 11) : s; }, 0);
+        if (t > 4 && t < 7) g += h2(Math.floor(f / 2), 77) > .55 ? .25 : 0;
+        if (t > 1 && h2(Math.floor(f / 3), 13) > .955) g += .18;
+        return g;
+      }
+
+      /* ---------- LED data city (Canvas 2D procedural) ---------- */
+      const STEP = 14, NC = Math.ceil(W / STEP) + 2, HF = [];
+      (() => { let c = 0; while (c < NC) { const run = 2 + Math.floor(h2(c, 1) * 6), mid = Math.abs((c - NC / 2) / (NC / 2));
+        const base = 34 - mid * 20 + (h2(c, 2) - .5) * 12, plateau = Math.max(6, Math.round(base - (mid > .55 && h2(c, 3) > .5 ? 6 : 0)));
+        for (let k = 0; k < run && c < NC; k++, c++) HF.push(plateau); } })();
+      const city = document.getElementById("city").getContext("2d"), cityGlow = document.getElementById("city-glow").getContext("2d");
+      function drawCity(ctx, t, build, chaosAt, alpha) {
+        const yB = 1180, tw8 = Math.floor(t * 8), tw12 = Math.floor(t * 12);
+        const hz = ctx.createRadialGradient(CX, yB - 140, 0, CX, yB - 140, 700);
+        hz.addColorStop(0, rgba(K.blue, .26 * alpha * clamp(build))); hz.addColorStop(.6, rgba(K.violet, .1 * alpha * clamp(build))); hz.addColorStop(1, rgba(K.blue, 0));
+        ctx.fillStyle = hz; ctx.fillRect(0, yB - 840, W, 1000);
+        for (let c = 0; c < NC; c++) {
+          const mid = Math.abs((c - NC / 2) / (NC / 2)), bc = clamp(build * 1.5 - mid * .5);
+          if (bc <= 0) continue;
+          for (let r = 0; r < 44; r++) {
+            const y0 = yB - r * STEP, ch = chaosAt(y0), hgt = lerp(HF[c], 4 + h3(c, tw8, 5) * 38, ch);
+            if (r >= hgt * bc) break;
+            if (r % 9 === 4 || h2(c, r) < .07) continue;
+            const band = Math.floor(r / 3);
+            const dx = ch > 0 ? (h3(band, tw12, 11) - .5) * 160 * ch * (h3(band, tw12, 12) > .5 ? 1 : 0) : 0;
+            const hh = h2(c * 7, r * 3), tw = .45 + .55 * (.5 + .5 * Math.sin(t * (1.5 + hh * 5) + hh * 40));
+            const top = r >= Math.floor(hgt * bc) - 1;
+            ctx.globalAlpha = Math.min(1, alpha * tw * (top ? 1.15 : .9));
+            ctx.fillStyle = hh > .93 ? K.pink2 : hh > .8 ? K.ice : hh > .4 ? K.blue2 : K.blue;
+            const s = hh > .8 ? 7 : 5; ctx.fillRect(c * STEP - 6 + dx, y0 - s / 2, s, s);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+      function drawFloor(ctx, t, a) {
+        if (a <= 0) return; const hy = 1230; ctx.lineWidth = 2;
+        for (let k = 0; k < 14; k++) { const z = (k - (t * 1.6) % 1) / 14; const y = hy + Math.pow(Math.max(0, z), 2.2) * (H - hy + 200);
+          ctx.strokeStyle = rgba(K.pink, a * .32 * Math.max(0, z)); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+        ctx.strokeStyle = rgba(K.violet, a * .22); ctx.lineWidth = 1.5;
+        for (let k = -10; k <= 10; k++) { ctx.beginPath(); ctx.moveTo(CX + k * 22, hy); ctx.lineTo(CX + k * 260, H + 100); ctx.stroke(); }
+      }
+      const beamEase = gsap.parseEase("power2.inOut");
+      const beamY = t => lerp(-60, H + 60, beamEase(prog(t, 7.0, 7.35)));
+      function renderCity(t) {
+        city.clearRect(0, 0, W, H); cityGlow.clearRect(0, 0, W, H);
+        if (t >= 14.6 && t < 16) return;
+        let build = 0, alpha = 0, chaos = () => 0, floorA = 0;
+        if (t < 4) { build = ease.inCubic(prog(t, 3.2, 4.0)) * .8; alpha = .6; chaos = () => 1; }
+        else if (t < 8) { build = .8 + .2 * prog(t, 4, 7.3); alpha = t < 7 ? .55 : .75; const by = beamY(t); chaos = y => t < 7 ? 1 : (y < by ? 0 : 1); }
+        else if (t < 16) { build = 1; alpha = .85; floorA = ease.outCubic(prog(t, 8.6, 9.6)); }
+        else { build = 1; alpha = .9; floorA = 1; }
+        if (build <= 0) return;
+        drawFloor(city, t, floorA);
+        drawCity(city, t, build, chaos, alpha);
+        cityGlow.drawImage(city.canvas, 0, 0);
+      }
+
+      /* ---------- emblem geometry (SVG) ---------- */
+      const TR = 420, TY = 960, NS = "http://www.w3.org/2000/svg";
+      const triPts = (cx, cy, R) => [0, 1, 2].map(k => { const a = -Math.PI / 2 + k * TAU / 3; return [cx + R * Math.cos(a), cy + R * Math.sin(a)]; });
+      const pts2str = P => P.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ");
+      function svgEl(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+      function perimPt(P, f) { f = ((f % 1) + 1) % 1; const Q = [...P, P[0]], k = Math.min(2, Math.floor(f * 3)), u = f * 3 - k; return [lerp(Q[k][0], Q[k + 1][0], u), lerp(Q[k][1], Q[k + 1][1], u)]; }
+      function perimPath(P, f0, f1) { const pts = [perimPt(P, f0)]; for (const c of [1 / 3, 2 / 3]) if (c > f0 && c < f1) pts.push(P[Math.round(c * 3)]); pts.push(perimPt(P, f1)); return "M" + pts.map(p => p.map(v => v.toFixed(1)).join(" ")).join(" L"); }
+      const gPink = document.getElementById("g-pink"), gBlue = document.getElementById("g-blue");
+      const P1 = triPts(CX, TY, TR), P2 = triPts(CX, TY, TR * .9), RI = TR * .76, PI = triPts(CX, TY, RI);
+      // outer neon traced from the apex down both sides, meeting at the base
+      const outerL = svgEl("path", { d: perimPath(P1, .5, 1).replace(/^M/, "M"), stroke: K.pink, "stroke-width": 7 }, gPink);
+      outerL.setAttribute("d", "M" + [P1[0], P1[2], perimPt(P1, .5)].map(p => p.join(" ")).join(" L"));
+      const outerR = svgEl("path", { d: "M" + [P1[0], P1[1], perimPt(P1, .5)].map(p => p.join(" ")).join(" L"), stroke: K.pink, "stroke-width": 7 }, gPink);
+      const coreL = svgEl("path", { d: outerL.getAttribute("d"), stroke: K.pink2, "stroke-width": 2.5 }, gPink);
+      const coreR = svgEl("path", { d: outerR.getAttribute("d"), stroke: K.pink2, "stroke-width": 2.5 }, gPink);
+      // inner broken neon, like a worn sign
+      const GAPS = [[0, .2], [.24, .41], [.47, .53], [.57, .77], [.81, 1]];
+      const brokenSegs = GAPS.map(([a, b]) => svgEl("path", { d: perimPath(P2, a, b), stroke: K.pink, "stroke-width": 5 }, gPink));
+      const baseDash = svgEl("line", { x1: CX + 40, y1: TY + TR / 2 + 30, x2: CX + 190, y2: TY + TR / 2 + 30, stroke: K.pink, "stroke-width": 4 }, gPink);
+      // tunnel: clip, floor grid, inner frame, 9 drifting triangles
+      document.getElementById("tunnel-clip-poly").setAttribute("points", pts2str(PI));
+      const floorG = document.getElementById("tunnel-floor");
+      for (let k = -8; k <= 8; k++) svgEl("line", { x1: CX + k * RI * .2, y1: TY + RI / 2, x2: CX, y2: TY + 8, stroke: rgba(K.blue2, .45), "stroke-width": 1.5 }, floorG);
+      document.getElementById("tri-inner").setAttribute("d", "M" + pts2str(PI).replace(/ /g, " L") + " Z");
+      document.getElementById("tri-inner").setAttribute("stroke", K.blue2);
+      document.getElementById("tri-inner").setAttribute("stroke-width", 4);
+      const tunnelG = document.getElementById("tunnel");
+      const tunnelTris = Array.from({ length: 9 }, () => svgEl("polygon", { points: pts2str(PI), fill: "none", stroke: K.blue, "vector-effect": "non-scaling-stroke" }, tunnelG));
+      function tunnelSpeedAt(t) { return t < 16 ? .35 + 1.6 * ease.inCubic(prog(t, 12.8, 14)) : lerp(1.2, .35, ease.outCubic(prog(t, 16, 17))); }
+      // integrate speed analytically so phase stays a pure function of t (piecewise: constant, ramp, decay)
+      function tunnelPhase(t) {
+        let ph = 0; const steps = 80, t0 = 8;
+        const dt = (t - t0) / steps; for (let i = 0; i < steps; i++) ph += tunnelSpeedAt(t0 + (i + .5) * dt) * dt;
+        return ph;
+      }
+      function renderTunnel(t) {
+        const tunnel = t < 8 ? 0 : ease.outCubic(prog(t, 8.35, 9.1));
+        const ph = ((tunnelPhase(Math.max(8, t)) % 1) + 1) % 1;
+        tunnelTris.forEach((el, k) => {
+          const d = k + ph, s = Math.pow(.74, d), r = RI * s, vis = clamp(tunnel * 9 - (8 - k)) * clamp(r / 30);
+          el.setAttribute("transform", `translate(${CX} ${TY}) scale(${s.toFixed(4)}) translate(${-CX} ${-TY})`);
+          el.setAttribute("stroke-width", Math.max(1, 5 * s).toFixed(2));
+          el.setAttribute("stroke", gsap.utils.interpolate(K.blue, K.ice, clamp(1 - s) * .8));
+          el.setAttribute("opacity", (vis * clamp(1.3 - d / 9)).toFixed(3));
+        });
+      }
+
+      /* ---------- hyperspace (Canvas 2D procedural) ---------- */
+      const hyper = document.getElementById("hyper").getContext("2d");
+      function renderHyper(t) {
+        hyper.clearRect(0, 0, W, H);
+        const a = t < 14.15 || t >= 16 ? 0 : ease.outCubic(prog(t, 14.15, 14.6));
+        if (a <= 0) return;
+        const u = prog(t, 14, 16), travel = (t - 14) * 2.2 + 11 * u ** 3;
+        hyper.lineJoin = "round";
+        for (let k = 0; k < 30; k++) {
+          const z = ((k * .4 - travel) % 12 + 12) % 12 + .12, R = 300 / z, al = clamp((12 - z) / 4) * clamp((z - .12) / .35) * a;
+          if (al <= 0 || R > 5000) continue;
+          hyper.strokeStyle = [K.pink, K.blue2, K.violet][k % 3]; hyper.globalAlpha = al; hyper.lineWidth = Math.max(1.5, 14 / z);
+          const P = triPts(CX, TY, R); hyper.beginPath(); hyper.moveTo(...P[0]); hyper.lineTo(...P[1]); hyper.lineTo(...P[2]); hyper.closePath(); hyper.stroke();
+        }
+        const sp = .3 + 2.2 * u ** 2; hyper.lineCap = "round";
+        for (let i = 0; i < 180; i++) {
+          const ang = h2(i, 91) * TAU, r = 40 + ((h2(i, 92) * 2000 + travel * 260 * (1 + h2(i, 93))) % 1500), len = 20 + 260 * sp * (r / 1500);
+          hyper.strokeStyle = [K.pink2, K.ice, K.blue2, K.blue2][i % 4]; hyper.globalAlpha = a * clamp(r / 300) * .8; hyper.lineWidth = 1 + 3 * (r / 1500);
+          hyper.beginPath(); hyper.moveTo(CX + Math.cos(ang) * r, TY + Math.sin(ang) * r); hyper.lineTo(CX + Math.cos(ang) * (r + len), TY + Math.sin(ang) * (r + len)); hyper.stroke();
+        }
+        hyper.globalAlpha = 1;
+      }
+
+      /* ---------- glitch tears (post) ---------- */
+      const tearsEl = document.getElementById("tears");
+      const tears = Array.from({ length: 10 }, (_, i) => { const d = document.createElement("div"); d.className = "tear"; tearsEl.appendChild(d); return d; });
+      function renderTears(t) {
+        const f = Math.floor(t * 60), g = glitchAmt(t), n = g < .06 ? 0 : 2 + Math.floor(g * 7);
+        tears.forEach((el, i) => {
+          if (i >= n) { el.style.opacity = 0; return; }
+          const y = h3(i, f, 1) * H, hh = 6 + h3(i, f, 2) ** 2 * 140, dx = (h3(i, f, 3) - .5) * 2 * g * 200;
+          el.style.top = y + "px"; el.style.height = hh + "px";
+          el.style.background = `linear-gradient(90deg, ${rgba(i % 2 ? K.pink : K.blue2, 0)}, ${rgba(i % 2 ? K.pink : "#3de1ff", .35)} ${50 + dx / 20}%, ${rgba(K.blue2, 0)})`;
+          el.style.opacity = clamp(g * 1.2);
+        });
+      }
+
+      /* ---------- build ---------- */
+      const tl = gsap.timeline({ paused: true });
+      const fontsReady = Promise.all(["500 100px Orbitron", "700 100px Orbitron", "500 40px Oxanium", "30px ShareTech"].map(f => document.fonts.load(f)));
+      fontsReady.then(() => {
+        const fit = (str, weight, family, maxW, maxSize) => { mctx.font = `${weight} 100px ${family}`; return Math.min(maxSize, 100 * maxW / mctx.measureText(str).width); };
+        const tracks = [];
+
+        /* I · SIGNAL — console */
+        const BOOT = [["darkwinter.os // cold boot", K.ice], ["> mount founder context ..... ok", K.dim], ["> mission ................ locked", K.dim],
+          ["> runway ................. finite", K.dim], ["> noise ................... 97.3%", K.pink2], ["> searching for signal", K.ice]];
+        const consoleEl = document.getElementById("console");
+        BOOT.forEach(([s, col], i) => {
+          const ln = document.createElement("div"); ln.className = "ln"; ln.style.color = col; consoleEl.appendChild(ln);
+          tracks.push(track(ln, '34px "ShareTech"', [{ str: s, t0: .7 + i * .33, stagger: .012, dur: .18, seed: 20 + i }]));
+          if (i === BOOT.length - 1) { const c = document.createElement("span"); c.id = "cursor"; ln.appendChild(c); }
+        });
+        const cursor = document.getElementById("cursor");
+        tl.to(consoleEl, { opacity: 0, duration: .3, ease: "none" }, 3.55);
+        // CRT switch-on: a line stretches out, then opens vertically
+        tl.fromTo(["#crt-left", "#crt-right"], { scaleX: 1 }, { scaleX: 0, duration: .18, ease: "expo.out" }, .02);
+        tl.fromTo(["#crt-top", "#crt-bot"], { scaleY: 1 }, { scaleY: 0, duration: .4, ease: "power2.inOut" }, .22);
+        tl.fromTo("#crt-line", { scaleX: 0 }, { scaleX: 1, duration: .18, ease: "expo.out" }, .02);
+        tl.fromTo("#crt-line", { opacity: 1 }, { opacity: 0, duration: .32, ease: "none", immediateRender: false }, .3);
+        // core ignition at 2.0
+        tl.fromTo("#core", { opacity: 0, scale: .4 }, { opacity: .3, scale: .7, duration: .5, ease: "expo.in" }, 1.5);
+        tl.to("#core", { opacity: 1, scale: 1.6, duration: .08, ease: "none" }, 2.0);
+        tl.to("#core", { scale: .9, duration: .6, ease: "expo.out" }, 2.08);
+        tl.to("#core", { opacity: .62, scale: .62, duration: .4, ease: "power2.inOut" }, 3.6);
+        tl.fromTo("#ring", { opacity: .85, scale: .2 }, { opacity: 0, scale: 7.4, duration: .9, ease: "expo.out" }, 2.0);
+        tl.fromTo("#horizon", { scaleX: 0 }, { scaleX: 1, duration: .9, ease: "expo.out" }, 2.1);
+
+        /* II · CHAOS — glitching headline that decodes into the answer */
+        const A = ["building", "is chaos."], B = ["you need", "a system."];
+        const hsize = Math.min(fit(A[1], 700, "Orbitron", 900, 160), fit(B[1], 700, "Orbitron", 900, 160));
+        const hfont = `700 ${hsize}px "Orbitron"`;
+        const headline = document.getElementById("headline");
+        const hlines = [0, 1].map(l => {
+          const stack = document.createElement("div"); stack.className = "gstack"; stack.style.fontSize = hsize + "px"; stack.style.lineHeight = (hsize * 1.1) + "px"; headline.appendChild(stack);
+          const rows = ["warm", "cool", "base"].map(kind => { const r = document.createElement("div"); r.className = "row " + kind; if (kind !== "base") { r.setAttribute("aria-hidden", "true"); r.setAttribute("data-layout-ignore", ""); } stack.appendChild(r); return r; });
+          const segs = [{ str: A[l], t0: 4.0 + l * .25, stagger: .035, dur: .3, seed: 40 + l }, { str: B[l], t0: 6.0 + l * .2, stagger: .035, dur: .3, seed: 50 + l }];
+          const tr = rows.map(r => track(r, hfont, segs, { out: [7.62 + l * .06, .015] }));
+          return { rows, tr };
+        });
+        const ticker = document.getElementById("ticker");
+        tl.fromTo("#beam", { y: -60, opacity: 1 }, { y: H + 60, opacity: 1, duration: .35, ease: "power2.inOut", immediateRender: false }, 7.0);
+        tl.set("#beam", { opacity: 0 }, 7.36);
+
+        /* III · SYSTEM — the triangle draws itself around the core */
+        tl.set("#emblem", { opacity: 1 }, 8.0);
+        [outerL, outerR, coreL, coreR].forEach(p => { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+          tl.to(p, { strokeDashoffset: 0, duration: .72, ease: "power2.inOut" }, 8.0); });
+        brokenSegs.forEach((p, i) => { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+          const [a, b] = GAPS[i], near = Math.min(a, 1 - b), dir = a < .5 ? 1 : -1;
+          if (dir < 0) p.style.strokeDashoffset = -L;
+          tl.to(p, { strokeDashoffset: 0, duration: .5, ease: "power2.out" }, 8.2 + near * 1.1); });
+        { const L = 150; baseDash.style.strokeDasharray = L; baseDash.style.strokeDashoffset = L; tl.to(baseDash, { strokeDashoffset: 0, duration: .5, ease: "expo.out" }, 8.68); }
+        tl.fromTo("#g-blue", { opacity: 0 }, { opacity: 1, duration: .75, ease: "power2.out" }, 8.35);
+        tl.to("#core", { opacity: .9, scale: .95, duration: .6, ease: "expo.out" }, 8.0);
+        tl.to("#core", { opacity: 1, scale: 1.15, duration: 1, ease: "power2.in" }, 13.0);
+        ["#rail-0", "#rail-1", "#rail-2", "#rail-3"].forEach((r, i) => tl.fromTo(r, { scaleX: 0 }, { scaleX: 1, duration: .7, ease: "expo.out" }, 8.8 + i * .08));
+        ["#trace-0", "#trace-1", "#trace-2"].forEach((r, i) => tl.fromTo(r, { opacity: 0 }, { opacity: 1, duration: .5, ease: "power2.out" }, 9.0 + i * .1));
+        tl.set("#rails", { opacity: 0 }, 0); tl.set("#rails", { opacity: 1 }, 8.8);
+        // camera: slow push, then zoom through the core into hyperspace
+        tl.fromTo("#cam", { scale: 1 }, { scale: 1.06, duration: 6, ease: "power2.inOut" }, 8.0);
+        tl.to("#cam", { scale: 16, duration: .6, ease: "expo.in" }, 14.0);
+        tl.set("#cam", { scale: 1 }, 14.6);
+        tl.set(["#emblem", "#rails"], { opacity: 0 }, 14.6);
+        tl.set("#core", { opacity: 0 }, 14.6);
+        const topFont = (() => { const s = fit("built for the long game.", 500, "Orbitron", 920, 66); return { s, f: `500 ${s}px "Orbitron"` }; })();
+        document.getElementById("top-copy").style.fontSize = topFont.s + "px";
+        tracks.push(track(document.getElementById("top-copy"), topFont.f, [{ str: "an ai operating system", t0: 8.6, stagger: .025, seed: 70 }, { str: "built for the long game.", t0: 12.0, stagger: .025, seed: 71 }]));
+        tracks.push(track(document.getElementById("bot-copy"), '500 46px "Oxanium"', [{ str: "for mission-driven founders", t0: 9.6, stagger: .022, seed: 72 }], { out: [12.0, .012], spacing: 2 }));
+        tl.to("#system-copy", { opacity: 0, duration: .25, ease: "none" }, 13.8);
+
+        /* IV · RUSH — whiteout */
+        tl.fromTo("#whiteout .disc", { opacity: 0, scale: .03 }, { opacity: 1, scale: 1, duration: .65, ease: "expo.in" }, 15.35);
+
+        /* V · LOCKUP */
+        tl.set(["#emblem", "#rails", "#g-blue"], { opacity: 1 }, 16.0);
+        tl.set("#core", { opacity: 1, scale: 1 }, 16.0);
+        tl.fromTo("#flash", { opacity: 1 }, { opacity: 0, duration: .6, ease: "power2.out", immediateRender: false }, 16.0);
+        const wm = "darkwinter.ai", ws = fit(wm, 500, "Orbitron", 900, 150), wfont = `500 ${ws}px "Orbitron"`;
+        const wmEl = document.getElementById("wordmark"); wmEl.style.fontSize = ws + "px";
+        tracks.push(track(wmEl, wfont, [{ str: wm, t0: 16.15, stagger: .05, dur: .3, seed: 80 }]));
+        mctx.font = wfont; const wmW = mctx.measureText(wm).width;
+        const ul = document.getElementById("underline"); ul.style.width = wmW + "px";
+        tl.fromTo(ul, { scaleX: 0 }, { scaleX: 1, duration: .6, ease: "expo.out" }, 16.5);
+        const db = document.getElementById("datablock"); db.style.left = (CX - wmW / 2) + "px";
+        tl.fromTo(db, { opacity: 0 }, { opacity: .55, duration: .4, ease: "power2.out" }, 16.6);
+        tracks.push(track(document.getElementById("tagline"), '500 46px "Oxanium"', [{ str: "intelligence for uncertain times", t0: 17.0, stagger: .028, seed: 82 }], { spacing: 1 }));
+        tracks.push(track(document.getElementById("subline"), '22px "ShareTech"', [{ str: "AI OPERATING SYSTEMS  ·  MISSION-DRIVEN FOUNDERS", t0: 17.5, stagger: .012, seed: 83 }], { spacing: 3 }));
+        // CRT switch-off: collapse to a line, the line to a dot, the dot to black
+        tl.to(["#crt-top", "#crt-bot"], { scaleY: 1, duration: .3, ease: "power2.inOut" }, 19.4);
+        tl.to("#crt-line", { opacity: 1, duration: .3, ease: "none" }, 19.4);
+        tl.to(["#crt-left", "#crt-right"], { scaleX: 1, duration: .18, ease: "expo.in" }, 19.72);
+        tl.to("#crt-line", { scaleX: 0, duration: .18, ease: "expo.in" }, 19.72);
+        tl.fromTo("#crt-dot", { opacity: 0, scale: 1 }, { opacity: 1, duration: .02, ease: "none" }, 19.86);
+        tl.to("#crt-dot", { opacity: 0, scale: .1, duration: .12, ease: "power2.in" }, 19.88);
+
+        /* ---------- per-frame driver: everything procedural is a pure function of time ---------- */
+        const shakeEl = document.getElementById("shake"), pulseEl = document.getElementById("core-pulse"), grainEl = document.getElementById("grain"), rollEl = document.getElementById("roll");
+        const DATA_FONT = '21px "ShareTech"';
+        function render(t) {
+          const f = Math.floor(t * 60);
+          tracks.forEach(tr => tr.update(t));
+          cursor.style.opacity = t > 2.68 && Math.floor(t * 3) % 2 === 0 ? 1 : 0;
+          // headline: jitter + RGB split while the world is chaos, clean after the scan beam
+          const calm = t >= 7.0, g = glitchAmt(t), fr15 = Math.floor(t * 15);
+          hlines.forEach(({ rows, tr }, l) => {
+            tr.forEach(x => x.update(t));
+            rows[2].style.color = l === 1 && !calm ? "rgb(255,140,196)" : "#fff";
+            const amp = calm ? 0 : 1;
+            tr[2].slots.spans.forEach((s, i) => {
+              const jx = amp * (h3(i, fr15, 60 + l) - .5) * 26, jy = amp * (h3(i, fr15, 63 + l) - .5) * 16;
+              s.style.transform = amp ? `translate(${jx.toFixed(1)}px, ${jy.toFixed(1)}px)` : "";
+            });
+            [0, 1].forEach(k => {
+              const step = Math.floor(t / (1 / 24)), split = Math.min(1, g) * 18;
+              rows[k].style.opacity = g > .06 ? .85 : 0;
+              rows[k].style.transform = `translate(${((hash(step * 13 + k * 7 + l) * 2 - 1) * split + (k ? -1 : 1) * split * .6).toFixed(1)}px, ${((hash(step * 29 + k * 11 + l) * 2 - 1) * split * .35).toFixed(1)}px)`;
+            });
+          });
+          if (t >= 4 && t < 8) {
+            if (t < 7) { const n = (97 + h2(Math.floor(t * 12), 3) * 2.9).toFixed(1), s = `noise ${n}%   signal 0.0${Math.floor(h2(Math.floor(t * 9), 4) * 9)}%`;
+              ticker.style.color = K.dim; ticker.style.opacity = prog(t, 4.6, 4.9); ticker.textContent = s; }
+            else { ticker.style.color = K.ice; ticker.style.opacity = 1; ticker.textContent = decode("signal acquired", t, 7.1, { stagger: .02, out: [7.6, .01] }); }
+          }
+          // core pulses on every beat once lit
+          let pulse = 1; for (let b = 2; b < DUR; b += BEAT) { const d = t - b; if (d >= 0 && d < .6) pulse += .22 * Math.exp(-d * 7); }
+          pulseEl.style.transform = `scale(${pulse.toFixed(4)})`;
+          // camera shake from the shared hit list, plus a slow handheld drift
+          let sx = Math.sin(t * .9) * 3, sy = Math.cos(t * .7) * 4;
+          for (const [h, a] of HITS) { const d = t - h; if (d < 0 || d > .5) continue; const e = a * Math.exp(-d * 10); sx += e * 14 * Math.sin(d * 97 + h * 5); sy += e * 12 * Math.cos(d * 83 + h * 2); }
+          shakeEl.style.transform = `translate(${sx.toFixed(2)}px, ${sy.toFixed(2)}px)`;
+          renderCity(t); renderTunnel(t); renderHyper(t); renderTears(t);
+          // lockup data block keeps scrambling
+          if (t >= 16) {
+            const fr = Math.floor(t * 10), lines = [];
+            for (let l = 0; l < 5; l++) { if (l === 3) { lines.push(""); continue; } let s = ""; const len = l === 4 ? 30 : 52;
+              for (let i = 0; i < len; i++) s += h2(i * 13 + l, 5) > .82 ? " " : GLY[Math.floor(h3(i, fr + (i % 7), l) * 26 + (l % 2) * 10)]; lines.push(s); }
+            db.textContent = lines.join("\n");
+          }
+          grainEl.style.backgroundPosition = `${(f * 53) % 256}px ${(f * 97) % 256}px`;
+          rollEl.style.transform = `translateY(${(((t * 520) % (H + 400)) - 360).toFixed(1)}px)`;
+        }
+        const drv = { p: 0 };
+        tl.to(drv, { p: 1, duration: DUR, ease: "none", onUpdate: () => render(tl.time()) }, 0);
+        render(0);
+        window.__timelines["main"] = tl;
+      });
+    </script>
+  </body>
+</html>
