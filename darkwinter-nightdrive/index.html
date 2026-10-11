@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>darkwinter TX-01 Night Drive</title>
+<style>
+  @font-face { font-family: 'Orbitron'; src: url('fonts/orbitron.woff2') format('woff2'); }
+  @font-face { font-family: 'Oxanium'; src: url('fonts/oxanium.woff2') format('woff2'); }
+  @font-face { font-family: 'ShareTech'; src: url('fonts/sharetech.woff2') format('woff2'); }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body { display: grid; place-items: center; }
+  #c { height: 100vh; width: 56.25vh; max-width: 100vw; max-height: 177.78vw; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script type="importmap">
+{ "imports": {
+  "three": "../node_modules/three/build/three.module.js",
+  "three/addons/": "../node_modules/three/examples/jsm/"
+} }
+</script>
+<script type="module">
+/* =====================================================================
+   darkwinter.ai — TRANSMISSION 01 · SYNTHWAVE · "Night Drive"
+   20s · 1080×1920 · 60fps · 120 BPM. Every frame is a pure function of t.
+   0–1.5   power on: the horizon draws         1.5–5   "Building is a night drive."
+   5–7.5   "You need a system." eight lamps     7.5–13  the mark rises with the sun
+   13–16   three exits: clarity, focus, momentum, then a breath
+   16–20   lockup, then the picture collapses with the tape stop
+   Cues match audio.mjs (the synthwave score from TX-02).
+   ===================================================================== */
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+
+const W = 1080, H = 1920, FPS = 60, DUR = 20, RW = 810, RH = 1440;
+const K = { void: '#0B0612', pink: '#FF2E88', blue: '#2F5BFF', ice: '#D6E2FF', lilac: '#C9A3FF', fog: '#24092f', sunTop: '#FFD36B', sunMid: '#FF7A3D' };
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const smooth = x => { x = clamp(x); return x * x * (3 - 2 * x); };
+const E = { outCubic: x => 1 - (1 - x) ** 3, inCubic: x => x ** 3, inOutCubic: x => x < .5 ? 4 * x ** 3 : 1 - (-2 * x + 2) ** 3 / 2,
+  outExpo: x => x >= 1 ? 1 : 1 - 2 ** (-10 * x), inExpo: x => x <= 0 ? 0 : 2 ** (10 * x - 10), outBack: x => 1 + 2.70158 * (x - 1) ** 3 + 1.70158 * (x - 1) ** 2 };
+function hash(n) { n |= 0; n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); n ^= n >>> 16; return (n >>> 0) / 4294967296; }
+const h2 = (a, b) => hash(Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263));
+const h3 = (a, b, c) => hash(Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) + Math.imul(c | 0, 1274126177));
+const rgba = (h, a) => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; };
+
+/* ---------- glyph decode (fixed character slots, so scrambling never shifts the layout) ---------- */
+const GLY = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#$%&*+=<>/';
+function decode(str, t, t0, { stagger = .03, dur = .2, seed = 1 } = {}) {
+  const fr = Math.floor(t * 30); let s = '';
+  for (let i = 0; i < str.length; i++) { const ch = str[i], ti = t0 + i * stagger;
+    s += t < ti ? ' ' : t < ti + dur ? (ch === ' ' ? ' ' : GLY[Math.floor(h3(i, fr, seed) * GLY.length)]) : ch; }
+  return s;
+}
+function slotText(ctx, final, shown, x, y, spacing = 0) {
+  const ws = [...final].map(c => ctx.measureText(c).width + spacing);
+  const tw = ws.reduce((a, b) => a + b, 0) - spacing; let cx = x - tw / 2;
+  ctx.textAlign = 'center';
+  for (let i = 0; i < shown.length; i++) { if (shown[i] !== ' ') ctx.fillText(shown[i], cx + ws[i] / 2 - spacing / 2, y); cx += ws[i]; }
+  ctx.textAlign = 'left';
+}
+const fitSize = (ctx, str, tmpl, maxW, maxSize, spacing = 0) => { let s = maxSize; for (; s > 10; s--) { ctx.font = tmpl.replace('SZ', s); if (ctx.measureText(str).width + spacing * (str.length - 1) <= maxW) break; } return s; };
+
+/* ---------- soft camera sways on the swells (no jolts) ---------- */
+const SWAYS = [[1.0, .2], [8.0, .4], [16.0, .45], [19.4, .25]];
+function sway(t) { let x = 0, y = 0; for (const [h, a] of SWAYS) { const d = t - h; if (d < 0 || d > 1.2) continue; const e = a * Math.sin(Math.PI * Math.min(1, d / .12) / 2) * Math.exp(-d * 4); x += e * 9 * Math.sin(d * 19 + h * 3); y += e * 7 * Math.cos(d * 15 + h * 5); } return [x, y]; }
+
+/* ---------- speed along the road: the distance driven, D(t), is integrated once from a speed curve ---------- */
+const VK = [[0, 0], [1, 0], [2, 3], [5, 4.5], [8, 5.5], [13, 7], [15.4, 12], [16, 5], [19.4, 2.5]];
+function speed(t) { if (t >= 19.4) return 2.5 * Math.max(0, 1 - ((t - 19.4) / .55) ** 1.6);
+  for (let i = 1; i < VK.length; i++) if (t <= VK[i][0]) { const [a, va] = VK[i - 1], [b, vb] = VK[i]; return lerp(va, vb, smooth((t - a) / (b - a))); } return 0; }
+const DSTEP = 1 / 600, DT = new Float64Array(Math.ceil(DUR / DSTEP) + 2);
+for (let i = 1; i < DT.length; i++) DT[i] = DT[i - 1] + speed((i - .5) * DSTEP) * DSTEP;
+const Dist = t => { const x = clamp(t, 0, DUR) / DSTEP, i = Math.floor(x); return lerp(DT[i], DT[Math.min(i + 1, DT.length - 1)], x - i); };
+
+/* =====================================================================
+   3D: the road, the sun, the mountains and the mark
+   ===================================================================== */
+const gl = document.createElement('canvas'); gl.width = RW; gl.height = RH;
+const renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(RW, RH, false); renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(K.void); scene.fog = new THREE.Fog(K.fog, 18, 105);
+const camera = new THREE.PerspectiveCamera(50, RW / RH, .1, 400);
+const composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(RW, RH), .85, .5, .22); composer.addPass(bloom); composer.addPass(new OutputPass());
+const C = c => new THREE.Color(c);
+const texFrom = (c, srgb = true) => { const tx = new THREE.CanvasTexture(c); if (srgb) tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8; return tx; };
+const mk = (w = W, h = H) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+
+// sky: a gradient wall behind everything, brightest at the horizon
+const skyC = mk(4, 512), sx = skyC.getContext('2d'), sg = sx.createLinearGradient(0, 0, 0, 512);
+[[0, '#04020a'], [.5, '#120726'], [.78, '#3a0f4a'], [.93, '#8a1c63'], [1, '#d23a7c']].forEach(([o, c]) => sg.addColorStop(o, c)); sx.fillStyle = sg; sx.fillRect(0, 0, 4, 512);
+const sky = new THREE.Mesh(new THREE.PlaneGeometry(260, 110), new THREE.MeshBasicMaterial({ map: texFrom(skyC), fog: false, depthWrite: false }));
+sky.position.set(0, 55, -130); scene.add(sky);
+// stars
+{ const n = 420, p = new Float32Array(n * 3); for (let i = 0; i < n; i++) { p[i * 3] = (h2(i, 1) - .5) * 220; p[i * 3 + 1] = 14 + h2(i, 2) ** .7 * 95; p[i * 3 + 2] = -125; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: K.ice, size: 2.2, sizeAttenuation: false, fog: false, transparent: true, opacity: .75 }))); }
+
+// the sun: a striped disc whose lower bands open up as it climbs
+const sunMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, fog: false,
+  uniforms: { uT: { value: 0 }, uGain: { value: 1 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+  fragmentShader: `varying vec2 vUv; uniform float uT; uniform float uGain;
+    void main(){ vec2 p = vUv * 2. - 1.; float r = length(p); float a = smoothstep(1., .985, r);
+      vec3 top = vec3(1., .83, .42), mid = vec3(1., .48, .24), low = vec3(1., .18, .53);
+      vec3 col = mix(low, mid, smoothstep(-.9, .1, p.y)); col = mix(col, top, smoothstep(.1, .85, p.y));
+      float band = fract((p.y + uT * .06) * 8.); float w = smoothstep(.2, -1., p.y) * .62;
+      float cut = p.y < .2 ? smoothstep(w - .02, w + .02, band) : 1.;
+      gl_FragColor = vec4(col * uGain, a * cut); }` });
+const sun = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), sunMat); scene.add(sun);
+const glowC = mk(256, 256), gx = glowC.getContext('2d'), gg = gx.createRadialGradient(128, 128, 0, 128, 128, 128);
+gg.addColorStop(0, 'rgba(255,90,140,.55)'); gg.addColorStop(.45, 'rgba(255,46,136,.18)'); gg.addColorStop(1, 'rgba(255,46,136,0)'); gx.fillStyle = gg; gx.fillRect(0, 0, 256, 256);
+const sunGlow = new THREE.Mesh(new THREE.PlaneGeometry(110, 110), new THREE.MeshBasicMaterial({ map: texFrom(glowC), transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending }));
+scene.add(sunGlow);
+
+// mountains: dark ridges on either side of the sun with neon edges
+const mountains = new THREE.Group(); scene.add(mountains);
+function ridge(z, hMax, seed, edge, fill, op) {
+  const xs = [], hs = []; for (let x = -150; x <= 150; x += 5) { const side = smooth((Math.abs(x) - 14) / 30); xs.push(x); hs.push(side * hMax * (.45 + .55 * h2(x + 400, seed)) + (h2(x, seed + 7) - .5) * 1.5 * side); }
+  const pos = [], line = []; for (let i = 0; i < xs.length - 1; i++) { const [a, b, ha, hb] = [xs[i], xs[i + 1], Math.max(0, hs[i]), Math.max(0, hs[i + 1])];
+    pos.push(a, 0, z, b, 0, z, b, hb, z, a, 0, z, b, hb, z, a, ha, z); line.push(a, ha, z, b, hb, z);
+    if (ha > 2 && i % 2 === 0) line.push(a, ha, z, (a + b) / 2 + 2, 0, z); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  mountains.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: fill, fog: false })));
+  const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(line, 3));
+  mountains.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: edge, fog: false, transparent: true, opacity: op })));
+}
+ridge(-112, 15, 3, '#7a2a8a', '#0d0619', .7); ridge(-100, 10, 9, K.pink, '#100620', .85);
+
+// the ground: one shader draws the neon grid, the road edges and the centre dashes, scrolling with D(t)
+const groundMat = new THREE.ShaderMaterial({ fog: false, extensions: {},
+  uniforms: { uOff: { value: 0 }, uFog: { value: C(K.fog) }, uGain: { value: 1 } },
+  vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
+  fragmentShader: `varying vec3 vW; uniform float uOff; uniform vec3 uFog; uniform float uGain;
+    float aline(float v, float w){ float d = abs(v); float f = fwidth(v); return 1. - smoothstep(w, w + f * 1.5, d); }
+    void main(){ float dist = -vW.z; float x = vW.x, z = vW.z - uOff;
+      vec2 c = vec2(x, z) / 2.4; vec2 gr = abs(fract(c - .5) - .5) / fwidth(c); float grid = 1. - min(min(gr.x, gr.y), 1.);
+      float road = step(abs(x), 2.6);
+      grid *= 1. - road;
+      float edge = aline(abs(x) - 2.6, .05);
+      float dash = aline(x, .06) * step(fract(z / 3.2), .5);
+      float fade = 1. - smoothstep(20., 105., dist);
+      vec3 col = vec3(.035, .018, .06) + road * vec3(.012, .01, .03);
+      col += vec3(1., .18, .53) * grid * 1.15 * fade + vec3(.84, .89, 1.) * edge * fade * 1.1 + vec3(.79, .64, 1.) * dash * fade * .9;
+      col = mix(col, uFog, smoothstep(30., 112., dist));
+      gl_FragColor = vec4(col * uGain, 1.); }` });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 125), groundMat); ground.rotation.x = -Math.PI / 2; ground.position.set(0, 0, -57.5); scene.add(ground);
+const horizon = new THREE.Mesh(new THREE.PlaneGeometry(400, .35), new THREE.MeshBasicMaterial({ color: C('#ff6aa8'), fog: false, transparent: true, opacity: .8 }));
+horizon.position.set(0, .05, -119.5); scene.add(horizon);
+
+// the eight lamps: posts that alternate sides, each with a head and a pool of light on the road
+const poolC = mk(128, 128), px = poolC.getContext('2d'), pg = px.createRadialGradient(64, 64, 0, 64, 64, 64);
+pg.addColorStop(0, 'rgba(215,180,255,.9)'); pg.addColorStop(.5, 'rgba(255,46,136,.3)'); pg.addColorStop(1, 'rgba(255,46,136,0)'); px.fillStyle = pg; px.fillRect(0, 0, 128, 128);
+const poolTex = texFrom(poolC);
+const LAMPS = [];
+for (let i = 0; i < 8; i++) {
+  const side = i % 2 ? 1 : -1, g = new THREE.Group(); g.position.x = side * 3.6;
+  const post = new THREE.Mesh(new THREE.BoxGeometry(.12, 4.2, .12), new THREE.MeshBasicMaterial({ color: '#2a1840' })); post.position.y = 2.1; g.add(post);
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(1.3, .08, .08), new THREE.MeshBasicMaterial({ color: '#2a1840' })); arm.position.set(-side * .62, 4.15, 0); g.add(arm);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(.7, .1, .22), new THREE.MeshBasicMaterial({ color: C('#3a2350') })); head.position.set(-side * 1.15, 4.06, 0); g.add(head);
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(5.5, 5.5), new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+  pool.rotation.x = -Math.PI / 2; pool.position.set(-side * 1.15, .03, 0); g.add(pool);
+  scene.add(g); LAMPS.push({ g, head, pool, t: 5 + i * .25, z0: -(12 + 7 * i) });
+}
+
+// three exits: overhead gantries that read clearly at the countdown cues
+const SIGNS = [['EXIT 03', 'CLARITY', 13.5], ['EXIT 02', 'FOCUS', 14.5], ['EXIT 01', 'MOMENTUM', 15.5]].map(([small, big, t]) => {
+  const c = mk(1024, 300), x = c.getContext('2d'); const g = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ map: null, transparent: true, fog: false, opacity: 0 });
+  const panel = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.875), mat); panel.position.y = 3.5; g.add(panel);
+  const beamMat = new THREE.MeshBasicMaterial({ color: '#2a1840', transparent: true, opacity: 0 });
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.16, 4.5, .16), beamMat); p.position.set(s * 4.4, 2.25, 0); g.add(p); }
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(9, .14, .14), beamMat); beam.position.y = 4.5; g.add(beam);
+  scene.add(g); return { small, big, t, c, x, mat, beamMat, g };
+});
+function drawSigns() { for (const s of SIGNS) { const x = s.x; x.fillStyle = '#0c0824'; x.fillRect(0, 0, 1024, 300);
+  x.strokeStyle = K.pink; x.lineWidth = 12; x.strokeRect(14, 14, 996, 272); x.strokeStyle = rgba(K.pink, .35); x.lineWidth = 4; x.strokeRect(34, 34, 956, 232);
+  x.fillStyle = K.lilac; x.font = "40px 'ShareTech'"; x.textAlign = 'center'; x.fillText(s.small + '  ↗', 512, 98);
+  x.fillStyle = K.ice; const sz = fitSize(x, s.big, "900 SZpx 'Orbitron'", 860, 116, 0); x.font = `900 ${sz}px 'Orbitron'`; x.fillText(s.big, 512, 230);
+  s.mat.map = texFrom(s.c); s.mat.needsUpdate = true; } }
+
+// the mark: the Mark Lab synthwave era — neon pink frame, blue ring, ice hypercube, white core
+const S3 = Math.sqrt(3), G = { T: .085, ringW: .032, hex: .25, D4: 2 }; G.ringR = .5 - G.T - G.ringW / 2;
+const triPts = r => [[0, r], [-S3 / 2 * r, -r / 2], [S3 / 2 * r, -r / 2]];
+const V4 = []; for (let i = 0; i < 16; i++) V4.push([i & 1 ? 1 : -1, i & 2 ? 1 : -1, i & 4 ? 1 : -1, i & 8 ? 1 : -1]);
+const E4 = []; for (let i = 0; i < 16; i++) for (let b = 0; b < 4; b++) { const j = i ^ (1 << b); if (i < j) E4.push([i, j]); }
+const qIso = (() => { const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 1, 1).normalize(), new THREE.Vector3(0, 0, 1));
+  const p = new THREE.Vector3(1, 1, -1).applyQuaternion(q); return new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2 - Math.atan2(p.y, p.x)).multiply(q); })();
+function project(a, b) { const s = G.hex / Math.SQRT2, ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+  return V4.map(([x, y, z, w]) => { const x1 = x * ca - w * sa, w1 = x * sa + w * ca, z1 = z * cb - w1 * sb, w2 = z * sb + w1 * cb, k = 1 / (G.D4 + w2) * s; return [x1 * k, y * k, z1 * k]; }); }
+const markRoot = new THREE.Group(), mark = new THREE.Group(); markRoot.add(mark); scene.add(markRoot);
+const shape = new THREE.Shape(triPts(1).map(p => new THREE.Vector2(...p)));
+shape.holes.push(new THREE.Path(triPts(1 - 2 * G.T).reverse().map(p => new THREE.Vector2(...p))));
+const frameGeo = new THREE.ExtrudeGeometry(shape, { depth: .09, bevelEnabled: true, bevelThickness: .012, bevelSize: .008, bevelSegments: 3 }); frameGeo.translate(0, 0, -.045);
+const frame = new THREE.Mesh(frameGeo, new THREE.MeshBasicMaterial({ color: C(K.pink), fog: false })); mark.add(frame);
+const ring = new THREE.Mesh(new THREE.TorusGeometry(G.ringR, G.ringW / 2 * 1.05, 20, 180), new THREE.MeshBasicMaterial({ color: C(K.blue).multiplyScalar(1.3), fog: false })); mark.add(ring);
+const tessGroup = new THREE.Group(); tessGroup.quaternion.copy(qIso); mark.add(tessGroup);
+const tessPos = new Float32Array(E4.length * 6), tessGeo = new LineSegmentsGeometry(); tessGeo.setPositions(tessPos);
+const tessMat = new LineMaterial({ color: K.ice, linewidth: 3, worldUnits: false, fog: false }); tessMat.resolution.set(RW, RH);
+tessGroup.add(new LineSegments2(tessGeo, tessMat));
+const nodes = new THREE.InstancedMesh(new THREE.SphereGeometry(.013, 10, 8), new THREE.MeshBasicMaterial({ color: K.ice, fog: false }), 16); tessGroup.add(nodes);
+const core = new THREE.Mesh(new THREE.SphereGeometry(.03, 20, 16), new THREE.MeshBasicMaterial({ color: C('#ffffff').multiplyScalar(1.3), fog: false })); mark.add(core);
+// a dark disc behind the mark so it reads against the sun and the sky
+const backC = mk(256, 256), bx = backC.getContext('2d'), bg = bx.createRadialGradient(128, 128, 0, 128, 128, 128);
+bg.addColorStop(0, 'rgba(11,6,18,.85)'); bg.addColorStop(.6, 'rgba(11,6,18,.55)'); bg.addColorStop(1, 'rgba(11,6,18,0)'); bx.fillStyle = bg; bx.fillRect(0, 0, 256, 256);
+const backing = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2), new THREE.MeshBasicMaterial({ map: texFrom(backC), transparent: true, depthWrite: false, fog: false, opacity: 0 }));
+backing.position.z = -.4; markRoot.add(backing);
+const m4 = new THREE.Matrix4();
+
+const horizonY = { v: H * .62 };
+function render3D(t) {
+  const D = Dist(t);
+  groundMat.uniforms.uOff.value = D;
+  // camera: low over the road, tilting up a little as the mark climbs
+  const look = lerp(2.2, 5.2, E.inOutCubic(prog(t, 8.2, 11))) + 1.0 * E.inOutCubic(prog(t, 15.6, 16.6));
+  camera.position.set(Math.sin(t * .35) * .12, 1.3 + Math.sin(t * .9) * .02, 0); camera.lookAt(0, look, -40);
+  camera.updateMatrixWorld();
+  const hp = new THREE.Vector3(0, 0, -119).project(camera); horizonY.v = (1 - hp.y) / 2 * H;
+  // sun climbs behind the mountains from 7.5
+  const rise = E.outCubic(prog(t, 7.3, 11.5));
+  sun.position.set(0, lerp(-16, 7, rise), -108); sunMat.uniforms.uT.value = t;
+  sunGlow.position.set(0, sun.position.y + 2, -109); sunGlow.material.opacity = .2 + .4 * rise;
+  // lamps
+  LAMPS.forEach((L, i) => { const z = L.z0 + (D - Dist(5)); L.g.position.z = z; L.g.visible = z < 3;
+    const on = t >= L.t ? (t < L.t + .12 ? (h2(i, Math.floor(t * 40)) > .35 ? 1 : .25) : 1) : 0;
+    L.head.material.color.copy(on ? C('#e9d8ff').multiplyScalar(.9) : C('#3a2350')); L.pool.material.opacity = on * .75; });
+  // exits
+  SIGNS.forEach(s => { const z = -16 + (D - Dist(s.t)); s.g.position.z = z; const a = smooth(prog(t, s.t - .55, s.t - .15)) * (1 - smooth(prog(t, s.t + .5, s.t + .85)));
+    s.g.visible = a > .001; s.mat.opacity = a; s.beamMat.opacity = a; });
+  // the mark rises from the horizon at 8.0 and builds
+  const lt = t - 8.0, back = x => E.outBack(clamp(x));
+  markRoot.visible = t >= 7.95;
+  const climb = E.outCubic(prog(t, 8.0, 10.8)), push = E.inOutCubic(prog(t, 13, 15.4)), rest = E.inOutCubic(prog(t, 15.6, 16.2));
+  markRoot.position.set(0, lerp(-5.5, 10.2, climb) + push * .6 - rest * .3, lerp(-36, -31, push));
+  markRoot.scale.setScalar(4.2);
+  backing.material.opacity = climb * .9;
+  frame.scale.setScalar(back(lt / .55)); ring.scale.setScalar(back((lt - .35) / .5));
+  const unfold = E.outCubic(prog(lt, .7, 1.6));
+  const ang = (t - 8) * .6 * (1 - rest), P = project(ang, ang * .37);
+  for (let k = 0; k < E4.length; k++) { const [i, j] = E4[k]; tessPos.set([...P[i].map(v => v * unfold), ...P[j].map(v => v * unfold)], k * 6); }
+  tessGeo.setPositions(tessPos);
+  P.forEach((p, i) => { m4.makeTranslation(p[0] * unfold, p[1] * unfold, p[2] * unfold); nodes.setMatrixAt(i, m4); }); nodes.instanceMatrix.needsUpdate = true;
+  let pulse = 1; for (let b = 9.5; b < DUR; b += .5) { const d = t - b; if (d >= 0 && d < .4) pulse += .3 * Math.exp(-d * 9); }
+  core.scale.setScalar((.2 + 1.4 * E.outCubic(prog(lt, 1.35, 1.75))) * pulse);
+  mark.rotation.set(Math.sin(t * .5) * .12 * (1 - rest), Math.sin(t * .7) * .45 * (1 - rest), 0);
+  // the breath before GO: the world dims for half a second, then opens on the lockup
+  const breath = smooth(prog(t, 15.45, 15.75)) * (1 - smooth(prog(t, 15.9, 16.1)));
+  const gain = 1 - .45 * breath; groundMat.uniforms.uGain.value = gain; sunMat.uniforms.uGain.value = gain * .5;
+  bloom.strength = (.8 + .25 * Math.exp(-Math.max(0, t - 16) * 2) * (t > 16 ? 1 : 0)) * (1 - .4 * breath);
+  composer.render();
+}
+
+/* =====================================================================
+   2D: type, HUD, finishing
+   ===================================================================== */
+const main = document.getElementById('c'), ctx = main.getContext('2d');
+const tmp = mk(), tctx = tmp.getContext('2d');
+
+// 80s chrome: ice to blue above a hard horizon line, pink below, with a soft neon glow
+function chrome(c, str, shown, x, y, size, spacing = 0, glowA = 1) {
+  c.font = `900 ${size}px 'Orbitron'`;
+  const g = c.createLinearGradient(0, y - size * .82, 0, y + size * .05);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(.45, '#bcd0ff'); g.addColorStop(.52, '#2f5bff'); g.addColorStop(.53, '#1a1240'); g.addColorStop(.7, '#ff2e88'); g.addColorStop(1, '#ffd1e6');
+  c.shadowColor = rgba(K.pink, .8 * glowA); c.shadowBlur = 30; c.fillStyle = g; slotText(c, str, shown, x, y, spacing); c.shadowBlur = 0;
+}
+function headline(t) {
+  const lines = [
+    { a: 'BUILDING IS', b: 'A NIGHT DRIVE.', sub: 'No map. No streetlights. Nobody to call.', t0: 1.6, t1: 4.85 },
+    { a: 'YOU NEED', b: 'A SYSTEM.', sub: 'Light the road ahead.', t0: 5.0, t1: 7.6 },
+  ];
+  for (const [k, L] of lines.entries()) {
+    if (t < L.t0 || t > L.t1 + .3) continue;
+    const out = 1 - E.inCubic(prog(t, L.t1, L.t1 + .3)), lift = (1 - out) * -30;
+    ctx.globalAlpha = out;
+    const s1 = fitSize(ctx, L.b, "900 SZpx 'Orbitron'", 940, 104, 6);
+    chrome(ctx, L.a, decode(L.a, t, L.t0, { seed: 10 + k, stagger: .035 }), W / 2, 430 + lift, s1, 6);
+    chrome(ctx, L.b, decode(L.b, t, L.t0 + .25, { seed: 20 + k, stagger: .035 }), W / 2, 430 + s1 * 1.12 + lift, s1, 6);
+    ctx.font = "34px 'Oxanium'"; ctx.fillStyle = K.lilac; ctx.shadowColor = rgba(K.void, .9); ctx.shadowBlur = 12;
+    slotText(ctx, L.sub, decode(L.sub, t, L.t0 + .7, { seed: 30 + k, stagger: .015 }), W / 2, 430 + s1 * 2.1 + 20 + lift, 1); ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+}
+function hud(t) {
+  if (t < .45) return;
+  const a = E.outCubic(prog(t, .45, .9)) * (1 - prog(t, 19.3, 19.5));
+  ctx.globalAlpha = a; ctx.font = "30px 'ShareTech'"; ctx.fillStyle = K.lilac;
+  const L = 'TX-01 · NIGHT DRIVE'; ctx.textAlign = 'left'; ctx.fillText(decode(L, t, .45, { seed: 3, stagger: .02 }), 60, 110);
+  const odo = 'ODO ' + (Dist(t) * .06 + 1984).toFixed(1).padStart(7, '0') + ' MI'; ctx.textAlign = 'right'; ctx.fillText(t < .7 ? '' : odo, W - 60, 110); ctx.textAlign = 'left';
+  ctx.fillStyle = rgba(K.lilac, .35); ctx.fillRect(60, 132, W - 120, 2);
+  // signal locked
+  if (t >= 7.5 && t < 8.6) { const f = 1 - prog(t, 8.2, 8.6); ctx.globalAlpha = a * f; ctx.font = "44px 'ShareTech'"; ctx.fillStyle = K.ice; ctx.shadowColor = K.pink; ctx.shadowBlur = 18;
+    slotText(ctx, 'SIGNAL LOCKED', decode('SIGNAL LOCKED', t, 7.5, { seed: 40, stagger: .02 }), W / 2, horizonY.v - 150, 4); ctx.shadowBlur = 0; }
+  // readouts resolve as the mark settles (same three as TX-02)
+  if (t >= 10 && t < 15.8) { const f = 1 - prog(t, 15.4, 15.8); ctx.globalAlpha = a * f; ctx.font = "32px 'ShareTech'"; ctx.fillStyle = K.lilac;
+    [['RUNWAY', '14.2 MO', 10.0], ['FOCUS', '3 PRIORITIES', 10.4], ['SIGNAL', '0.82', 10.8]].forEach(([k, v, t0], i) => ctx.fillText(decode(`${k}  ${v}`, t, t0, { stagger: .025, seed: 50 + i }), 60, H - 170 + i * 40)); }
+  ctx.globalAlpha = 1;
+}
+function lockup(t) {
+  if (t < 15.95) return;
+  const a = 1 - prog(t, 19.3, 19.45);
+  const band = ctx.createLinearGradient(0, 1180, 0, 1720); band.addColorStop(0, 'rgba(11,6,18,0)'); band.addColorStop(.35, 'rgba(11,6,18,.6)'); band.addColorStop(.7, 'rgba(11,6,18,.6)'); band.addColorStop(1, 'rgba(11,6,18,0)');
+  ctx.globalAlpha = E.outCubic(prog(t, 15.95, 16.4)) * a; ctx.fillStyle = band; ctx.fillRect(0, 1180, W, 540);
+  ctx.globalAlpha = a;
+  const word = 'darkwinter.ai', sz = fitSize(ctx, word, "900 SZpx 'Orbitron'", 940, 118, 4);
+  chrome(ctx, word, decode(word, t, 16.0, { seed: 60, stagger: .04, dur: .25 }), W / 2, 1440, sz, 4, 1 + .6 * Math.exp(-Math.max(0, t - 16) * 2));
+  const tag = 'INTELLIGENCE FOR UNCERTAIN TIMES'; ctx.font = "36px 'Oxanium'"; ctx.fillStyle = K.ice; ctx.shadowColor = K.pink; ctx.shadowBlur = 14;
+  slotText(ctx, tag, decode(tag, t, 16.45, { seed: 61, stagger: .018 }), W / 2, 1515, 5); ctx.shadowBlur = 0;
+  const lw = 520 * E.outExpo(prog(t, 16.3, 17)); ctx.fillStyle = K.pink; ctx.fillRect(W / 2 - lw / 2, 1468, lw, 3);
+  ctx.globalAlpha = 1;
+}
+
+let GRAIN = [], SCAN;
+function initFinish() { for (let g = 0; g < 6; g++) { const c = mk(256, 256), x = c.getContext('2d'), id = x.createImageData(256, 256);
+  for (let i = 0; i < id.data.length; i += 4) { const v = h2(i, g + 31) * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; } x.putImageData(id, 0, 0); GRAIN.push(ctx.createPattern(c, 'repeat')); }
+  const s = mk(4, 4), sx2 = s.getContext('2d'); sx2.fillStyle = 'rgba(0,0,0,.22)'; sx2.fillRect(0, 2, 4, 2); SCAN = ctx.createPattern(s, 'repeat'); }
+
+function renderFrame(f) {
+  const t = f / FPS;
+  render3D(t);
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  const [sx_, sy_] = sway(t); ctx.translate(sx_, sy_);
+  // power on: a pink horizon line draws out from the centre, then the world fades up through it
+  const up = E.inOutCubic(prog(t, .85, 1.9));
+  ctx.imageSmoothingQuality = 'high'; ctx.globalAlpha = up; ctx.drawImage(gl, -20, -20, W + 40, H + 40); ctx.globalAlpha = 1;
+  if (t < 2.2) { const lw = W * E.outExpo(prog(t, .2, .95)), la = 1 - prog(t, 1.3, 2.2); ctx.globalAlpha = la; ctx.fillStyle = '#ff6aa8'; ctx.shadowColor = K.pink; ctx.shadowBlur = 30;
+    ctx.fillRect(W / 2 - lw / 2, horizonY.v - 2, lw, 4); ctx.shadowBlur = 0; ctx.globalAlpha = 1; }
+  headline(t); hud(t); lockup(t);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // finishing: scanlines, grain, vignette
+  ctx.globalAlpha = .5; ctx.fillStyle = SCAN; ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = .08; ctx.fillStyle = GRAIN[f % 6];
+  ctx.save(); ctx.translate((f * 53) % 256, (f * 97) % 256); ctx.fillRect(-256, -256, W + 512, H + 512); ctx.restore();
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  const v = ctx.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, H * .72); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.5)'); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  // end: the picture folds to a line and then a dot, with the tape stop
+  if (t > 19.35) { tctx.clearRect(0, 0, W, H); tctx.drawImage(main, 0, 0); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    const syk = Math.max(.003, 1 - E.inCubic(prog(t, 19.35, 19.7))), sxk = Math.max(.002, 1 - E.inExpo(prog(t, 19.66, 19.95)));
+    ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(sxk, syk); ctx.drawImage(tmp, -W / 2, -H / 2); ctx.restore();
+    const la = prog(t, 19.55, 19.7) * (1 - prog(t, 19.9, 19.98)); ctx.globalAlpha = la; ctx.fillStyle = '#ffd1e6'; ctx.shadowColor = K.pink; ctx.shadowBlur = 40;
+    ctx.fillRect(W / 2 - W * sxk / 2, H / 2 - 2, W * sxk, 4); ctx.shadowBlur = 0; ctx.globalAlpha = 1; }
+}
+
+window.ready = (async () => {
+  await Promise.all(["900 40px 'Orbitron'", "30px 'Oxanium'", "30px 'ShareTech'"].map(f => document.fonts.load(f)));
+  drawSigns(); initFinish(); return true;
+})();
+window.renderFrame = renderFrame;
+if (!location.search.includes('render')) window.ready.then(() => { const t0 = performance.now(); const loop = () => { renderFrame(Math.floor(((performance.now() - t0) / 1000 % DUR) * FPS)); requestAnimationFrame(loop); }; loop(); });
+</script>
+</body>
+</html>
