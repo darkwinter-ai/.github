@@ -29,9 +29,24 @@ The first score hit hard on 1.0, 7.5, 8.0 and 16.0 (kick, sub drop and noise bur
 
 In v1 the loud moments were one-beat spikes: the half-second at 8.0 sat about 5 dB above the next one, and the score fell straight back down. In v2 the level climbs into each section and holds, so the loudness range is wider (8.7 LU against 6.6) even though nothing jumps out.
 
+### Synthwave cut
+
+**▶ [tx02-synthwave.mp4](tx02-synthwave.mp4)**: the same picture with a second score, `audio-synthwave.mjs` → `soundtrack-synthwave.wav`.
+
+It follows the same steady-build rules as v2: no impacts or alarms, one pulse that never drops out, the breath before GO, and the lift to C major. The palette is 1980s synthwave:
+
+- a chorused poly pad;
+- a 16th-note octave-jumping sequenced bass;
+- a gliding saw lead with delayed vibrato, which plays a melody from the 7.5s pickup onward and a hook over the lockup;
+- four-on-the-floor kick with a soft, reverb-washed backbeat snare;
+- reverse-cymbal swells into 8.0 and 16.0, and DX-style bells for the toggles and the countdown.
+
+To build it, mux the same `video-only.mp4` with `soundtrack-synthwave.wav`.
+
 ```sh
 npm ci                                  # from the repo root (three.js for the render page)
-node audio.mjs                          # → soundtrack.wav
+node audio.mjs                          # → soundtrack.wav (v2)
+node audio-synthwave.mjs                # → soundtrack-synthwave.wav
 node render.mjs                         # → video-only.mp4 (~18 min, software WebGL)
 ffmpeg -i video-only.mp4 -i soundtrack.wav -af loudnorm=I=-14:TP=-1 \
   -c:v libx264 -crf 19 -pix_fmt yuv420p -c:a aac -b:a 256k -shortest tx02.mp4
