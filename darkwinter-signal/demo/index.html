@@ -67,7 +67,7 @@
         <p>An AI operating system for mission-driven founders, built for the long game. Turn the mark, then send a signal.</p>
         <a class="cta" href="#embed">Get the embed</a>
       </div>
-      <darkwinter-signal era="01" eras="01,02,05,06,00" label="The darkwinter mark. Press to send a signal."></darkwinter-signal>
+      <darkwinter-signal era="01" eras="01,02,03,04,05,06,00" label="The darkwinter mark. Press to send a signal."></darkwinter-signal>
     </div>
   </section>
 
@@ -86,6 +86,18 @@
       <article class="use">
         <darkwinter-signal era="02" hint="off" label="Mission control. Press to send a signal."></darkwinter-signal>
         <div class="cap"><h3>Product and waitlist</h3><p>The Cassette era for the product story. Fire a signal on waitlist sign-up as the confirmation moment.</p></div>
+      </article>
+      <article class="use">
+        <darkwinter-signal era="03" hint="off" label="Join the crew. Press to send a signal."></darkwinter-signal>
+        <div class="cap"><h3>Careers and crew</h3><p>The Atomic era: a printed sunburst and a theremin glide. "Build the future you were promised."</p></div>
+      </article>
+      <article class="use">
+        <darkwinter-signal era="04" hint="off" label="See the whole board. Press to send a signal."></darkwinter-signal>
+        <div class="cap"><h3>Insights and reports</h3><p>The Vector era: phosphor wireframe and a radar ping. "See the whole board."</p></div>
+      </article>
+      <article class="use">
+        <darkwinter-signal era="06" hint="off" label="Build what outlasts you. Press to send a signal."></darkwinter-signal>
+        <div class="cap"><h3>Threshold and long reads</h3><p>The Colony era: warm ceramic and soft pads, no drums. "Build what outlasts you."</p></div>
       </article>
     </div>
   </section>
@@ -108,14 +120,14 @@
     <p>Host <code>darkwinter-signal.js</code> and <code>darkwinter-signal-sound.js</code> side by side on the site. The sound file only downloads when a visitor turns sound on. It works in Webflow, Framer, Next.js or plain HTML.</p>
 <pre>&lt;script type="module" src="/js/darkwinter-signal.js"&gt;&lt;/script&gt;
 
-&lt;darkwinter-signal era="01" eras="01,02,05,06,00"
+&lt;darkwinter-signal era="01" eras="01,02,03,04,05,06,00"
   style="height: 520px"&gt;&lt;/darkwinter-signal&gt;</pre>
     <div class="two">
       <div class="tablewrap">
         <table>
           <thead><tr><th>Attribute</th><th>What it does</th></tr></thead>
           <tbody>
-            <tr><td><code>era</code></td><td>00 Mark, 01 Synthwave, 02 Cassette, 05 Noir, 06 Colony. Default 01.</td></tr>
+            <tr><td><code>era</code></td><td>00 Mark, 01 Synthwave, 02 Cassette, 03 Atomic, 04 Vector, 05 Noir, 06 Colony. Default 01.</td></tr>
             <tr><td><code>eras</code></td><td>Comma list that shows an era switcher.</td></tr>
             <tr><td><code>hint</code></td><td><code>off</code> hides the first-run hint.</td></tr>
             <tr><td><code>label</code></td><td>The accessible name for screen readers.</td></tr>
@@ -155,11 +167,14 @@
     ['Video and social', 'End card of a Transmission, LinkedIn video or Reel', 'sting/darkwinter-sting-01-synthwave'],
     ['Video and social', 'End card, cassette era', 'sting/darkwinter-sting-02-cassette'],
     ['Video and social', 'End card, noir era', 'sting/darkwinter-sting-05-noir'],
+    ['Video and social', 'Recruiting posts and crew cards', 'sting/darkwinter-sting-03-atomic'],
+    ['Video and social', 'Data and insight explainers', 'sting/darkwinter-sting-04-vector'],
     ['Podcast and Threshold', 'Episode open: the sonic logo', 'logo/darkwinter-logo-00-mark'],
     ['Podcast and Threshold', 'Bed under the intro voice', 'ambience/darkwinter-ambience-06-colony'],
     ['Podcast and Threshold', 'Episode close', 'sting/darkwinter-sting-00-mark'],
     ['Events and keynotes', 'Walk-on, or the section change in a talk', 'logo/darkwinter-logo-01-synthwave'],
     ['Events and keynotes', 'Booth screen or lobby loop', 'ambience/darkwinter-ambience-01-synthwave'],
+    ['Events and keynotes', 'Data talk or report launch', 'logo/darkwinter-logo-04-vector'],
     ['Sales demos and webinars', 'Intro before the screen share', 'logo/darkwinter-logo-02-cassette'],
     ['Sales demos and webinars', 'Waiting-room bed', 'ambience/darkwinter-ambience-02-cassette'],
   ];

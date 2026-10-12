@@ -19,7 +19,7 @@ const page = await browser.newPage(); page.on('pageerror', e => { console.error(
 await page.goto(`http://localhost:${srv.address().port}/kit.html`);
 await page.evaluate(async () => { window.mod = await import('/dist/darkwinter-signal-sound.js'); });
 
-const ERAS = { '00': 'mark', '01': 'synthwave', '02': 'cassette', '05': 'noir', '06': 'colony' };
+const ERAS = { '00': 'mark', '01': 'synthwave', '02': 'cassette', '03': 'atomic', '04': 'vector', '05': 'noir', '06': 'colony' };
 const JOBS = [];
 for (const [id, name] of Object.entries(ERAS)) {
   JOBS.push({ dir: 'logo', file: `darkwinter-logo-${id}-${name}`, id, dur: 4, act: 'logo', peak: -1 });

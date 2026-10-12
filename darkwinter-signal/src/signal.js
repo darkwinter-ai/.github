@@ -8,7 +8,7 @@
 //   <script type="module" src="/darkwinter-signal.js"></script>
 //   <darkwinter-signal era="01" eras="01,02,05,00" style="height:520px"></darkwinter-signal>
 //
-// Attributes: era (00 Mark, 01 Synthwave, 02 Cassette, 05 Noir, 06 Colony), eras (adds a switcher), hint ("off"
+// Attributes: era (00 Mark, 01 Synthwave, 02 Cassette, 03 Atomic, 04 Vector, 05 Noir, 06 Colony), eras (adds a switcher), hint ("off"
 // hides the first-run hint), label (accessible name). Methods: signal(), build(). Events: dw-signal, dw-era,
 // dw-sound (detail.on).
 import * as THREE from 'three';
@@ -26,6 +26,8 @@ export const ERAS = {
   '00': { name: 'Mark', bg: '#f4f2ee', fg: '#111111', frame: '#111111', ring: '#111111', tess: '#111111', core: null, bloom: 0, mode: 'flat' },
   '01': { name: 'Synthwave', bg: '#0b0612', fg: '#c9a3ff', frame: '#ff2e88', ring: '#2f5bff', tess: '#d6e2ff', core: '#ffffff', bloom: .85, grid: '#ff2e88', mode: 'neon' },
   '02': { name: 'Cassette', bg: '#120b03', fg: '#ffb000', frame: '#d97a00', ring: '#c86400', tess: '#ffd36b', core: '#fff1c4', bloom: .7, mode: 'neon' },
+  '03': { name: 'Atomic', bg: '#f1e4c3', fg: '#1f2a3a', frame: '#c8402b', ring: '#2f7f7a', tess: '#1f2a3a', core: '#e9b949', bloom: 0, mode: 'toon', sunburst: ['#f1e4c3', '#ecd28f'], overlay: 'halftone' },
+  '04': { name: 'Vector', bg: '#020604', fg: '#39ff88', frame: '#39ff88', ring: '#39ff88', tess: '#e6fff0', core: '#39ff88', bloom: .7, mode: 'wire', grid: '#0f5a32', overlay: 'scan' },
   '05': { name: 'Noir', bg: '#060914', fg: '#22e1ff', frame: '#ff2fb3', ring: '#22e1ff', tess: '#ffffff', core: '#ffd1f0', bloom: .9, mode: 'neon' },
   '06': { name: 'Colony', bg: '#f2c79a', fg: '#2b3a3f', frame: '#f6eedc', ring: '#7fc4cf', tess: '#2b3a3f', core: '#fff2cf', bloom: 0, mode: 'ceramic' },
 };
@@ -50,6 +52,9 @@ const CSS = `
   .stage { position: absolute; inset: 0; cursor: pointer; outline: none; touch-action: pan-y; }
   .stage:focus-visible { box-shadow: inset 0 0 0 2px var(--fg); }
   canvas, .flat { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .fx { position: absolute; inset: 0; pointer-events: none; }
+  .fx[data-o="halftone"] { background: radial-gradient(rgba(31,42,58,.18) 1.2px, transparent 1.6px) 0 0 / 7px 7px; }
+  .fx[data-o="scan"] { background: repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.28) 2px 3px), radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.55)); }
   .flat { display: grid; place-items: center; } .flat svg { width: min(60%, 60vh); }
   .ui { position: absolute; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; pointer-events: none; }
   .ui > * { pointer-events: auto; }
@@ -86,6 +91,7 @@ class DarkwinterSignal extends HTMLElement {
     this.#root = this.attachShadow({ mode: 'open' });
     this.#root.innerHTML = `<style>${CSS}</style>
       <div class="stage" part="stage" tabindex="0" role="button"></div>
+      <div class="fx" part="overlay"></div>
       <div class="hint" part="hint">Move to tune · Tap to send a signal</div>
       <div class="ui" part="controls">
         <button class="snd" type="button" aria-pressed="false"><svg class="spk" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 6h3l4-3v10l-4-3H2z"/><path d="M11 5.5c1 .8 1 4.2 0 5M12.8 4c2 1.6 2 6.4 0 8" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/></svg><span>Sound off</span></button>
@@ -201,17 +207,31 @@ class DarkwinterSignal extends HTMLElement {
     const ripMat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }), ripples = [];
     for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(new THREE.TorusGeometry(G.ringR, .004, 8, 120), ripMat.clone()); m.visible = false; mark.add(m); ripples.push(m); }
     const grid = new THREE.GridHelper(14, 42, 0xffffff, 0xffffff); grid.position.y = -.95; grid.material.transparent = true; grid.material.opacity = .4; scene.add(grid);
-    this.#three = { renderer, scene, camera, composer, bloom, mark, frame, ring, tess, tessGeo, tessPos, tessMat, nodes, core, ripples, grid, m4: new THREE.Matrix4(), fog: new THREE.Fog(0, 3.5, 11) };
+    // Vector draws every surface as an edge: the frame's outline and the ring as fat lines
+    const fat = (pos, lw) => { const g = new LineSegmentsGeometry(); g.setPositions(pos); const m = new LineMaterial({ color: 0xffffff, linewidth: lw, worldUnits: false }); return new LineSegments2(g, m); };
+    const frameEdges = fat(new THREE.EdgesGeometry(fg, 30).attributes.position.array, 2.2); mark.add(frameEdges);
+    const circ = []; for (const rr of [G.ringR - G.ringW / 2, G.ringR + G.ringW / 2]) for (let i = 0; i < 96; i++) { const a0 = i / 96 * Math.PI * 2, a1 = (i + 1) / 96 * Math.PI * 2; circ.push(Math.cos(a0) * rr, Math.sin(a0) * rr, 0, Math.cos(a1) * rr, Math.sin(a1) * rr, 0); }
+    const ringEdges = fat(circ, 2); mark.add(ringEdges);
+    // Atomic's printed sunburst behind the mark
+    const sb = document.createElement('canvas'); sb.width = sb.height = 1024;
+    const sunburst = new THREE.CanvasTexture(sb); sunburst.colorSpace = THREE.SRGBColorSpace;
+    this.#three = { renderer, scene, camera, composer, bloom, mark, frame, ring, tess, tessGeo, tessPos, tessMat, nodes, core, ripples, grid, frameEdges, ringEdges, sb, sunburst,
+      lineMats: [tessMat, frameEdges.material, ringEdges.material], m4: new THREE.Matrix4(), fog: new THREE.Fog(0, 3.5, 11) };
     new ResizeObserver(() => this.#resize()).observe(this); this.#resize(); this.#applyEra();
     this.#state.build0 = this.#state.clock;
   }
 
   #applyEra() {
     const e = ERAS[this.#eraId], T = this.#three, C = c => new THREE.Color(c);
-    T.scene.background = C(e.bg); T.fog.color = C(e.bg); T.scene.fog = e.mode === 'neon' ? T.fog : null;
-    const mat = col => e.mode === 'ceramic' ? new THREE.MeshStandardMaterial({ color: col, roughness: .55, metalness: 0 }) : new THREE.MeshBasicMaterial({ color: col });
+    T.fog.color = C(e.bg); T.scene.fog = e.bloom > 0 ? T.fog : null;
+    if (e.sunburst) { const x = T.sb.getContext('2d'), n = 30; for (let i = 0; i < n; i++) { x.fillStyle = e.sunburst[i % 2]; x.beginPath(); x.moveTo(512, 512); x.arc(512, 512, 760, i / n * Math.PI * 2, (i + 1) / n * Math.PI * 2); x.fill(); }
+      T.sunburst.needsUpdate = true; T.scene.background = T.sunburst; } else T.scene.background = C(e.bg);
+    this.#root.querySelector('.fx').dataset.o = e.overlay || '';
+    const wire = e.mode === 'wire'; T.frame.visible = T.ring.visible = !wire; T.frameEdges.visible = T.ringEdges.visible = wire;
+    T.frameEdges.material.color.set(e.frame); T.ringEdges.material.color.set(e.ring);
+    const mat = col => e.mode === 'ceramic' ? new THREE.MeshStandardMaterial({ color: col, roughness: .55, metalness: 0 }) : e.mode === 'toon' ? new THREE.MeshToonMaterial({ color: col }) : new THREE.MeshBasicMaterial({ color: col });
     T.frame.material = mat(e.frame); T.ring.material = mat(e.ring);
-    T.tessMat.color.set(e.tess); T.tessMat.linewidth = e.mode === 'flat' ? 3.4 : 2.6; T.nodes.material.color.set(e.tess); T.nodes.visible = e.mode !== 'flat';
+    T.tessMat.color.set(e.tess); T.tessMat.linewidth = { flat: 3.4, toon: 3.6, wire: 2 }[e.mode] ?? 2.6; T.nodes.material.color.set(e.tess); T.nodes.visible = e.mode !== 'flat' && e.mode !== 'toon';
     T.core.visible = !!e.core; if (e.core) T.core.material.color.set(e.core).multiplyScalar(e.bloom ? 1.3 : 1);
     T.ripples.forEach(r => r.material.color.set(e.mode === 'flat' ? e.frame : e.ring));
     T.grid.visible = !!e.grid; if (e.grid) T.grid.material.color.set(e.grid);
@@ -224,7 +244,7 @@ class DarkwinterSignal extends HTMLElement {
     // fit the mark: about 70% of the height, or of the width on narrow elements
     const half = Math.tan(THREE.MathUtils.degToRad(15)), dH = .78 / (half * .6), dW = .9 / (half * asp * .66);
     T.camera.position.set(0, -.04, Math.max(dH, dW)); T.camera.lookAt(0, -.1, 0); T.camera.updateProjectionMatrix();
-    T.tessMat.resolution.set(w, h);
+    T.lineMats.forEach(m => m.resolution.set(w, h));
   }
 
   #loop() {
@@ -252,7 +272,7 @@ class DarkwinterSignal extends HTMLElement {
     S.step = step;
     // build
     const lt = reduce ? 9 : S.clock - S.build0;
-    T.frame.scale.setScalar(outBack(clamp(lt / .55))); T.ring.scale.setScalar(outBack(clamp((lt - .35) / .5)));
+    T.frame.scale.setScalar(outBack(clamp(lt / .55))); T.ring.scale.setScalar(outBack(clamp((lt - .35) / .5))); T.frameEdges.scale.copy(T.frame.scale); T.ringEdges.scale.copy(T.ring.scale);
     const unfold = outCubic(clamp((lt - .7) / .9)), P = project(S.a, S.b * .6 + S.a * .37);
     for (let i = 0; i < E4.length; i++) { const [p, q] = E4[i]; T.tessPos.set([...P[p].map(v => v * unfold), ...P[q].map(v => v * unfold)], i * 6); }
     T.tessGeo.setPositions(T.tessPos);

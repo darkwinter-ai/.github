@@ -8,6 +8,8 @@ export const KITS = {
   '00': { lead: 'sine', pad: 'sine', scale: ['D5', 'F5', 'A5', 'C6', 'E6'], chord: ['D4', 'A4', 'E5', 'F5'], bass: 'D2', click: 'tick', kick: false, rev: 1.8, revWet: .2, dly: 0, drone: ['D3', 'A3'], droneVol: -30, logo: ['A4', 'C5', 'E5', 'F5'] },
   '01': { lead: 'sawtooth', pad: 'sawtooth', scale: ['D5', 'F5', 'A5', 'C6', 'D6'], chord: ['D3', 'A3', 'F4', 'A4', 'D5'], bass: 'D1', click: 'noise', kick: true, rev: 4, revWet: .35, dly: .375, drone: ['D2', 'A2', 'F3'], droneVol: -27, cutoff: 1400, logo: ['A5', 'C6', 'E6', 'F6'] },
   '02': { lead: 'square', pad: 'triangle', scale: ['A5', 'C6', 'E6', 'A6', 'C7'], chord: ['A3', 'E4', 'C5', 'E5'], bass: 'A1', click: 'metal', kick: false, rev: 1.5, revWet: .2, dly: .12, drone: ['A2', 'E3'], droneVol: -28, wobble: true, beep: true, cutoff: 1800, logo: ['E5', 'G5', 'B5', 'C6'] },
+  '03': { lead: 'fm', pad: 'triangle', scale: ['F5', 'A5', 'C6', 'D6', 'F6'], chord: ['F3', 'C4', 'A4', 'C5', 'F5'], bass: 'F1', click: 'metal', kick: true, rev: 2.6, revWet: .3, dly: 0, drone: ['F2', 'C3'], droneVol: -31, theremin: true, logo: ['A5', 'C6', 'E6', 'F6'] },
+  '04': { lead: 'square', pad: 'square', scale: ['E5', 'G5', 'B5', 'E6', 'G6'], chord: ['E3', 'B3', 'G4', 'B4'], bass: 'E1', click: 'tick', kick: false, rev: 1.2, revWet: .12, dly: .5, drone: ['E2'], droneVol: -32, ping: true, cutoff: 1100, logo: ['B5', 'D6', 'F#6', 'G6'] },
   '05': { lead: 'sawtooth', pad: 'sawtooth', scale: ['C5', 'Eb5', 'G5', 'Bb5', 'C6'], chord: ['C3', 'G3', 'Eb4', 'Bb4', 'D5'], bass: 'C1', click: 'noise', kick: true, rev: 6, revWet: .45, dly: .5, drone: ['C2', 'G2'], droneVol: -28, rain: true, buzz: true, cutoff: 900, logo: ['G4', 'Bb4', 'D5', 'Eb5'] },
   '06': { lead: 'sine', pad: 'fatsine', scale: ['G5', 'B5', 'D6', 'E6', 'G6'], chord: ['G3', 'D4', 'B4', 'E5', 'G5'], bass: 'G1', click: null, kick: false, rev: 5, revWet: .45, dly: 0, drone: ['G2', 'D3', 'B3'], droneVol: -23, cutoff: 2200, logo: ['B5', 'D6', 'F#6', 'G6'] },
 };
@@ -20,7 +22,12 @@ export function makeKit(id) {
   let bus = rev;
   if (k.dly) { const d = N(new T.PingPongDelay(k.dly, .35)); d.wet.value = .28; d.connect(rev); bus = d; }
   if (k.wobble) { const v = N(new T.Vibrato(5.5, .12)); v.connect(bus); bus = v; }
-  const lead = N(new T.PolySynth(T.Synth, { oscillator: { type: k.lead }, envelope: { attack: .005, decay: .18, sustain: .15, release: .4 }, volume: -18 })).connect(bus);
+  const lead = k.lead === 'fm'
+    ? N(new T.PolySynth(T.FMSynth, { harmonicity: 2, modulationIndex: 6, envelope: { attack: .01, decay: .25, sustain: .2, release: .6 }, volume: -18 })).connect(bus)
+    : N(new T.PolySynth(T.Synth, { oscillator: { type: k.lead }, envelope: { attack: .005, decay: .18, sustain: .15, release: .4 }, volume: -18 })).connect(bus);
+  // Atomic's theremin: a sine that glides with a wide vibrato
+  const glide = k.theremin ? N(new T.Synth({ oscillator: { type: 'sine' }, portamento: .25, envelope: { attack: .15, decay: .2, sustain: .7, release: .8 }, volume: -18 })) : null;
+  if (glide) { const v = N(new T.Vibrato(6, .25)).connect(rev); glide.connect(v); }
   const filt = N(new T.Filter(k.cutoff || 3000, 'lowpass')).connect(bus);
   const pad = N(new T.PolySynth(T.Synth, { oscillator: { type: k.pad }, envelope: { attack: .6, decay: .5, sustain: .8, release: 2.5 }, volume: -20 })).connect(filt);
   // the darkwinter signal bell: carrier plus a modulator at 3.5x with a fast-decaying index (same as the films)
@@ -57,6 +64,8 @@ export function makeKit(id) {
       if (kick) kick.triggerAttackRelease(k.bass, '4n', t + 1.45, .7);
       pad.triggerAttackRelease(k.chord, 2.6, t + 1.45, .7);
       bell.triggerAttackRelease(S[S.length - 1], 1.2, t + 1.45, .5);
+      if (glide) { glide.triggerAttack(S[0], t + .7); glide.setNote(S[4], t + 1.2); glide.triggerRelease(t + 1.7); }
+      if (k.ping) [0, .5, 1].forEach((d, i) => bell.triggerAttackRelease('E6', .4, t + 2.2 + d, .45 / (i + 1)));   // Vector's radar ping, echoing out
     },
     // the sonic logo: the signal bell climbs 3–5–7 and resolves up to the tonic over a soft chord
     logo(at = 0) {

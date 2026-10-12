@@ -14,14 +14,14 @@ Host both files from `dist/` side by side, then:
 
 ```html
 <script type="module" src="/js/darkwinter-signal.js"></script>
-<darkwinter-signal era="01" eras="01,02,05,06,00" style="height: 520px"></darkwinter-signal>
+<darkwinter-signal era="01" eras="01,02,03,04,05,06,00" style="height: 520px"></darkwinter-signal>
 ```
 
 It is a standard custom element in shadow DOM, so it works in Webflow (custom code embed), Framer (embed), Next.js or React (import the module once on the client), and plain HTML.
 
 | | |
 |---|---|
-| `era` | `00` Mark, `01` Synthwave, `02` Cassette, `05` Noir, `06` Colony. Default `01`. |
+| `era` | `00` Mark, `01` Synthwave, `02` Cassette, `03` Atomic, `04` Vector, `05` Noir, `06` Colony. Default `01`. |
 | `eras` | A comma-separated list of eras; shows an era switcher. |
 | `hint` | `off` hides the "Move to tune · Tap to send a signal" hint. |
 | `label` | The accessible name. |
