@@ -1,9 +1,9 @@
-// darkwinter TX-01 "Night Drive" score — synthesized sample by sample (no samples or loops).
-// The synthwave score from ../darkwinter-tx02/audio-synthwave.mjs, which follows the steady-build rules: no impacts,
-// crashes, alarms or snare rolls, one pulse that never drops out, sections that change by filter, swell and pitch.
-// The cues line up with this film: the eight bells at 5.0–6.75 light the eight lamps, the lead's pickup at 7.5 lands
-// as the mark rises at 8.0, the E–G–B bells at 13.5/14.5/15.5 are the three exits, then the breath, and the lift to
-// C major under the lockup at 16.0. Writes soundtrack.wav.
+// darkwinter TX-01 "Night Drive" score — synthesized sample by sample (no samples or loops). Its own track:
+// F# minor lifting to A major, a half-time outrun groove, a string machine, an FM electric piano and a breathy lead.
+// It shares the darkwinter sound with every film (see ../SOUND.md): a steady build with no hits, one pulse that never
+// stops, the half-second breath before the lockup, the signal bell playing the sonic logo, and the tape stop.
+// Cues: eight glass notes light the eight lamps (5.0–6.75), a reverse chord lands as the mark rises (8.0), the bell
+// climbs C#–E–G# on the three exits (13.5/14.5/15.5) and resolves to A on the lockup (16.0). Writes soundtrack.wav.
 import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 const SR = 48000, DUR = 20, N = SR * DUR, TAU = Math.PI * 2;
 const buf2 = () => [new Float32Array(N), new Float32Array(N)];
 const [L, R] = buf2(), [RL, RR] = buf2(), [DL, DR] = buf2(), [CL, CR] = buf2();
-let seed = 1984; const rand = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296; const noise = () => rand() * 2 - 1;
+let seed = 2140; const rand = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296; const noise = () => rand() * 2 - 1;
 const mtof = n => 440 * 2 ** ((n - 69) / 12);
 const NOTE = s => { const m = /^([A-G])(#|b)?(-?\d)$/.exec(s); return 12 * (+m[3] + 1) + { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0); };
 const notes = s => s.split(' ').map(NOTE);
@@ -33,87 +33,89 @@ function cutoff(t) { for (let i = 1; i < KEYS.length; i++) if (t <= KEYS[i][0]) 
 
 /* ---------- instruments ---------- */
 const kicks = [];
-// a drum-machine kick, rounded: short pitch sweep and a soft, low-passed click
-function kick(t0, g = 1) { kicks.push(t0); let ph = 0; const f = lp1(), c = lp1(); voice(t0, .5, τ => { ph += TAU * (48 + 95 * Math.exp(-τ * 30)) / SR; return f(Math.sin(ph), 600) * Math.min(1, τ / .003) * Math.exp(-τ * 6.5) + c(noise(), 1800) * Math.exp(-τ * 300) * .5; }, { gain: .6 * g }); }
-// a roomy snare: the body is soft, most of its size comes from the reverb send
-function snare(t0, g = 1) { let ph = 0; const f = svf(), lp = lp1(); voice(t0, .4, τ => { ph += TAU * (185 + 40 * Math.exp(-τ * 30)) / SR; return lp(Math.sin(ph) * Math.exp(-τ * 22) * .6 + f(noise(), 1700, .9).bp * Math.exp(-τ * 11) * 1.2, 5500) * Math.min(1, τ / .003); }, { gain: .2 * g, rev: 1.3, pan: .05 }); }
-function hat(t0, g = .03, pan = .3, open = false) { const f = lp1(), h = lp1(); voice(t0, open ? .3 : .1, τ => { const x = noise(); return h(x - f(x, 7500), 11000) * Math.min(1, τ / .002) * Math.exp(-τ * (open ? 14 : 50)); }, { gain: g, pan, rev: .15 }); }
-// a reverse cymbal: high noise swelling into the downbeat, cut with a short fade rather than a hit
-function revCym(tEnd, dur, g = .07) { const f = lp1(), s = lp1(); voice(tEnd - dur, dur, (τ, u) => { const x = noise(), hp = x - f(x, 3500); return s(hp, 4000 + 6000 * u) * u ** 3 * Math.min(1, (1 - u) * dur / .025); }, { gain: g, rev: .5 }); }
-function tick(t0, g = .12, pan = 0) { const f = svf(); voice(t0, .05, τ => f(noise(), 2400, 1.2).bp * Math.min(1, τ / .0015) * Math.exp(-τ * 120), { gain: g, pan, rev: .25 }); }
-// a DX-style bell for the lamps and the countdown
-function bell(t0, n, g = .07, pan = 0, dur = 2.4) { const f = mtof(n); voice(t0, dur, (τ, u) => Math.sin(TAU * f * τ + 1.4 * Math.exp(-τ * 4) * Math.sin(TAU * f * 14 * τ) * .3 + .9 * Math.exp(-τ * 6) * Math.sin(TAU * f * 2 * τ)) * Math.min(1, τ / .004) * Math.exp(-τ * 2) * Math.min(1, (1 - u) * 8), { gain: g, pan, rev: .5, dly: .4 }); }
-// the sequenced bass: 16ths, a pluck through cutoff(t)
-function seqBass(t0, n, g = .16) { const fr = mtof(n), a = svf(); voice(t0, .12, (τ, u, t) => { const x = saw(fr, τ) * .7 + saw(fr * 1.004, τ) * .3, fc = Math.min(2400, cutoff(t) * .7) * (.35 + 1.4 * Math.exp(-τ * 28)); return Math.tanh(a(x, fc, .6).lo * 1.4) * Math.min(1, τ / .003) * Math.min(1, (1 - u) * 6); }, { gain: g }); }
-// the poly pad: three detuned saws per note with a slow pulse-width-like shimmer, into the chorus bus
-function pad(t0, dur, ns, g = .035, { atk = .5, rel = .8 } = {}) { ns.forEach((n, j) => { for (const det of [-.11, 0, .11]) { const f = mtof(n + det), a = lp1(), b = lp1(); let ph = rand();
-  voice(t0, dur, (τ, u, t) => { ph += f / SR; const p = ph % 1, w = .5 + .35 * Math.sin(TAU * .3 * t + j), x = (2 * p - 1) * .6 + (p < w ? .4 : -.4), fc = cutoff(t); return b(a(x, fc), fc) * smooth(τ / atk) * smooth((1 - u) * dur / rel); }, { gain: g, pan: det * 5, rev: .45, cho: true }); } }); }
-// the lead: one continuous voice per phrase so the notes glide into each other, with delayed vibrato
-function lead(phrase, g = .06) { const t0 = phrase[0][0], end = phrase.at(-1)[0] + phrase.at(-1)[2] + .35, a = lp1(), b = lp1(); let p1 = 0, p2 = 0, cur = mtof(phrase[0][1]), k = 0;
+// a round kick: a short pitch sweep, with almost no click
+function kick(t0, g = 1, cut = 600) { kicks.push(t0); let ph = 0; const f = lp1(); voice(t0, .55, τ => { ph += TAU * (46 + 80 * Math.exp(-τ * 26)) / SR; return f(Math.sin(ph), cut) * Math.min(1, τ / .004) * Math.exp(-τ * 6); }, { gain: .62 * g }); }
+// a soft clap: three quick filtered bursts, most of its size from the reverb
+function clap(t0, g = 1) { for (const [d, a] of [[0, .7], [.011, .8], [.023, 1]]) { const f = svf(); voice(t0 + d, .3, τ => f(noise(), 1250, .8).bp * Math.min(1, τ / .002) * Math.exp(-τ * (d < .02 ? 60 : 13)) * a, { gain: .13 * g, rev: 1.4, pan: -.05 }); } }
+function hat(t0, g = .03, pan = .3) { const f = lp1(), h = lp1(); voice(t0, .1, τ => { const x = noise(); return h(x - f(x, 7500), 11000) * Math.min(1, τ / .003) * Math.exp(-τ * 48); }, { gain: g, pan, rev: .15 }); }
+// THE DARKWINTER SIGNAL BELL — shared by every darkwinter film (same FM bell as TX-02); it carries the sonic logo
+function bell(t0, n, g = .07, pan = 0, dur = 2.4) { const f = mtof(n); voice(t0, dur, (τ, u) => Math.sin(TAU * f * τ + 1.1 * Math.exp(-τ * 5) * Math.sin(TAU * f * 3.5 * τ)) * Math.min(1, τ / .006) * Math.exp(-τ * 1.9) * Math.min(1, (1 - u) * 8), { gain: g, pan, rev: .55, dly: .35 }); }
+// a glass pluck for the streetlamps: sine plus a soft third harmonic, quick decay, long delay
+function glass(t0, n, g = .05, pan = 0) { const f = mtof(n); voice(t0, 1.2, (τ, u) => (Math.sin(TAU * f * τ) + .25 * Math.sin(TAU * f * 3 * τ) * Math.exp(-τ * 8)) * Math.min(1, τ / .003) * Math.exp(-τ * 4) * Math.min(1, (1 - u) * 6), { gain: g, pan, rev: .45, dly: .6 }); }
+// the drive: steady eighth-note bass that swells into each note (a built-in pump), filter on cutoff(t)
+function drive(t0, n, g = .17) { const fr = mtof(n), a = lp1(), b = lp1(); voice(t0, .25, (τ, u, t) => { const x = saw(fr, τ) * .6 + Math.sin(TAU * fr / 2 * τ) * .5, fc = Math.min(1300, cutoff(t) * .5); return Math.tanh(b(a(x, fc), fc) * 1.5) * smooth(τ / .05) * Math.min(1, (1 - u) * 5); }, { gain: g }); }
+// a string machine: four detuned saws per note, slow ensemble, into the chorus bus
+function strings(t0, dur, ns, g = .02, { atk = .8, rel = .9 } = {}) { ns.forEach((n, j) => { for (const det of [-.13, -.04, .05, .14]) { const f = mtof(n + det), a = lp1(), b = lp1(); let ph = rand();
+  voice(t0, dur, (τ, u, t) => { ph += f * (1 + .0025 * Math.sin(TAU * (5.1 + j * .3) * t + det * 9)) / SR; const fc = cutoff(t) * .85; return b(a(2 * (ph % 1) - 1, fc), fc) * smooth(τ / atk) * smooth((1 - u) * dur / rel); }, { gain: g, pan: det * 4, rev: .5, cho: true }); } }); }
+// an FM electric piano: a tine with a bright attack that mellows
+function ep(t0, n, g = .03, pan = 0, dur = 1.2) { const f = mtof(n); voice(t0, dur, (τ, u) => (Math.sin(TAU * f * τ + 1.6 * Math.exp(-τ * 7) * Math.sin(TAU * f * τ)) + .12 * Math.sin(TAU * f * 14 * τ) * Math.exp(-τ * 30)) * Math.min(1, τ / .003) * Math.exp(-τ * 2.4) * Math.min(1, (1 - u) * 6), { gain: g, pan, rev: .4, dly: .25, cho: true }); }
+// a reverse electric-piano chord that swells into a downbeat
+function reverseEP(tEnd, dur, ns, g = .03) { ns.forEach((n, j) => { const f = mtof(n), len = Math.round(dur * SR), buf = new Float32Array(len);
+  for (let k = 0; k < len; k++) { const τ = k / SR; buf[k] = Math.sin(TAU * f * τ + 1.6 * Math.exp(-τ * 7) * Math.sin(TAU * f * τ)) * Math.exp(-τ * 1.6); }
+  voice(tEnd - dur, dur, (τ, u) => buf[Math.min(len - 1, len - 1 - Math.floor(u * len))] * smooth(u * 1.4) * Math.min(1, (1 - u) * dur / .015), { gain: g, pan: j % 2 ? .45 : -.45, rev: .7 }); }); }
+// a breathy lead: a hollow narrow pulse with breath noise, one voice per phrase so notes glide
+function lead(phrase, g = .05) { const t0 = phrase[0][0], end = phrase.at(-1)[0] + phrase.at(-1)[2] + .4, a = lp1(), b = lp1(), nb = svf(); let ph = 0, cur = mtof(phrase[0][1]), k = 0;
   voice(t0, end - t0, (τ, u, t) => { while (k + 1 < phrase.length && t >= phrase[k + 1][0]) k++; const [ts, n, d] = phrase[k], since = t - ts;
-    cur += (mtof(n) - cur) * (1 - Math.exp(-1 / (SR * .035)));
-    const vib = 1 + .006 * smooth((since - .25) / .3) * Math.sin(TAU * 5.4 * t), f = cur * vib; p1 += f / SR; p2 += f * 1.006 / SR;
-    const gap = phrase[k + 1] ? phrase[k + 1][0] - (ts + d) : 1, env = since < d ? Math.min(1, since / .02) : Math.max(0, 1 - (since - d) / Math.min(.3, Math.max(.06, gap)));
-    const x = (2 * (p1 % 1) - 1) + (2 * (p2 % 1) - 1), fc = 1400 + 1800 * Math.exp(-since * 3);
-    return b(a(x * .5, fc), fc) * env * smooth((end - t) / .3); }, { gain: g, pan: -.05, rev: .45, dly: .5 }); }
-// a bright arp pluck
-function arp(t0, n, g = .03, pan = 0) { const f = mtof(n), a = lp1(); voice(t0, .3, (τ, u, t) => a(saw(f, τ) * .6 + Math.sin(TAU * f * 2 * τ) * .4, Math.min(5000, cutoff(t) * 1.2)) * Math.min(1, τ / .003) * Math.exp(-τ * 12), { gain: g, pan, dly: .55, rev: .3 }); }
-function bloom(t0, n, dur, g = .3) { const f = mtof(n); voice(t0, dur, (τ, u) => Math.sin(TAU * f * τ) * smooth(τ / .12) * (1 - smooth(u)), { gain: g }); }
+    cur += (mtof(n) - cur) * (1 - Math.exp(-1 / (SR * .06)));
+    const f = cur * (1 + .007 * smooth((since - .35) / .4) * Math.sin(TAU * 4.8 * t)); ph += f / SR;
+    const gap = phrase[k + 1] ? phrase[k + 1][0] - (ts + d) : 1, env = since < d ? smooth(since / .09) : Math.max(0, 1 - (since - d) / Math.min(.4, Math.max(.08, gap)));
+    const tone = b(a(((ph % 1) < .3 ? 1 : -1) * .6 + Math.sin(TAU * ph) * .5, 1900), 1900), breath = nb(noise(), f * 2, .3).bp * .5;
+    return (tone + breath * (.6 + .4 * Math.exp(-since * 4))) * env * smooth((end - t) / .4); }, { gain: g, pan: .05, rev: .5, dly: .45 }); }
+function bloom(t0, n, dur, g = .3) { const f = mtof(n); voice(t0, dur, (τ, u) => Math.sin(TAU * f * τ) * smooth(τ / .15) * (1 - smooth(u)), { gain: g }); }
 
 /* =====================================================================
-   SCORE (same cues as index.html)
+   SCORE (cues match index.html)
    ===================================================================== */
-const PROG = [['A1', 'A3 C4 E4 G4'], ['F1', 'F3 A3 C4 E4'], ['C2', 'G3 C4 E4 G4'], ['G1', 'G3 B3 D4 F#4']].map(([b, c]) => [NOTE(b), notes(c)]);
-const PENTA = notes('A4 C5 D5 E5 G5 A5 C6 D6');
-const bassPat = [0, 12, 0, 12, 0, 12, 7, 12];   // the octave-jumping synthwave sequence
+// F# minor: F#m7 | Dmaj7 | A(add9) | E6, two seconds a chord; the lockup lifts to A major
+const PROG = [['F#1', 'F#3 A3 C#4 E4'], ['D2', 'D3 F#3 A3 C#4'], ['A1', 'E3 A3 B3 C#4'], ['E2', 'E3 G#3 B3 C#4']].map(([b, c]) => [NOTE(b), notes(c)]);
+const LAMP = notes('F#4 A4 B4 C#5 E5 F#5 A5 B5');
 
-// 0–1.5 power on: the pad blooms up through a closed filter; one bell as the raster opens
-tick(.2, .16, -.3);
-pad(.1, 2.0, notes('A2 E3 B3 C4 E4'), .018, { atk: 1.1, rel: .5 });
-bell(1.0, NOTE('E5'), .035, .2, 2);
+// 0–1.5 power on: the string machine rises out of the dark on an open fifth
+strings(.1, 2.1, notes('F#2 C#3 G#3'), .02, { atk: 1.2, rel: .5 });
 
-// 1.5–5 flying blind: the sequence starts, muffled; the chord hangs on a sus; distant telemetry
-for (let t = 1.5; t < 8.0; t += .125) seqBass(t, PROG[0][0] + bassPat[Math.round(t * 8) % 8], .1 + .06 * smooth((t - 1.5) / 6));
-pad(1.9, 2.3, notes('A3 D4 E4 B4'), .014, { atk: 1 });
-pad(3.9, 1.5, notes('F3 C4 E4 G4'), .015, { atk: .8 });
-for (let t = 3.0; t < 5.0; t += .5) hat(t + .25, .012 + .006 * (t - 3), .25);
-for (let t = 1.7; t < 6.6; t += .22) if (rand() < .4) bell(t, PENTA[Math.floor(rand() * 8)] + 12, .006 + .004 * rand(), (rand() - .5) * 1.4, .4);
+// 1.5–5 night drive: the drive starts muffled and never stops; an unresolved F#sus2 hangs over it
+for (let t = 1.5; t < 8.0; t += .25) drive(t, PROG[0][0] + (Math.round(t * 4) % 2 ? 12 : 0), .1 + .07 * smooth((t - 1.5) / 6));
+strings(1.9, 2.4, notes('F#3 G#3 C#4 E4'), .014, { atk: 1 });
+strings(4.0, 1.4, notes('D3 A3 C#4 E4'), .014, { atk: .7 });
+for (let t = 1.8; t < 6.6; t += .27) if (rand() < .35) glass(t, LAMP[Math.floor(rand() * 8)] + 12, .006 + .004 * rand(), (rand() - .5) * 1.4);
 
-// 5–7.5 connect: each switch plays the next arp note; the kick fades in under a filter
-pad(5.2, 2.6, notes('D3 A3 C4 E4 G4'), .02, { atk: .9, rel: .5 });
-for (let i = 0; i < 8; i++) { const t = 5 + i * .25, p = -.7 + i * .2; tick(t, .1, p); bell(t + .01, PENTA[i], .045 + i * .004, p, 1.4); }
-for (let t = 6.0; t < 7.5; t += .5) kick(t, .25 + .15 * (t - 6));
-for (let t = 6.0; t < 8.0; t += .25) hat(t + .125, .008 + .012 * smooth((t - 6) / 2), Math.round(t * 4) % 2 ? .3 : -.3);
-revCym(8.0, 1.6, .06);
+// 5–7.5 you need a system: each lamp is a glass note, the eight climb; the kick arrives under a filter
+strings(5.2, 2.7, notes('B2 D3 F#3 A3 C#4'), .016, { atk: .9, rel: .4 });
+for (let i = 0; i < 8; i++) glass(5 + i * .25 + .01, LAMP[i], .05 + i * .004, -.7 + i * .2);
+for (const t of [6.0, 6.75, 7.0]) kick(t, .3 + .1 * (t - 6), 300);
+for (let t = 6.0; t < 8.0; t += .25) hat(t + .125, .006 + .01 * smooth((t - 6) / 2), Math.round(t * 4) % 2 ? .3 : -.3);
 
-// 7.5 signal acquired: the lead's pickup notes, landing on the downbeat as the mark builds
-// 8–13 the mark: four-on-the-floor, a soft backbeat, the sequence opens, the lead takes the melody
-bloom(8.0, NOTE('A1'), 1.4, .12);
-for (let t = 8.0; t < 15.5; t += .5) kick(t, .6 + .2 * smooth((t - 8) / 5));
-for (let t = 8.5; t < 13.0; t += 1) snare(t, .7 + .3 * smooth((t - 8.5) / 3));
-for (let t = 8.0; t < 15.5; t += .25) { const off = Math.round(t * 4) % 2; hat(t, off ? .02 : .01, off ? .3 : -.3, off && Math.round(t * 4) % 4 === 3 && t > 10); }
-for (let t = 8.0; t < 16.0; t += .125) { const bar = Math.floor((t - 8) / 2) % 4; seqBass(t, PROG[bar][0] + bassPat[Math.round(t * 8) % 8], .16 + .03 * smooth((t - 8) / 7)); }
-for (let b = 0; b < 4; b++) pad(8 + b * 2, 2.1, PROG[b][1], .03, { atk: .2, rel: .3 });
-const M = [[7.5, 'E5', .2], [7.75, 'G5', .2], [8.0, 'A5', .9], [9.0, 'G5', .45], [9.5, 'E5', .45],
-  [10.0, 'F5', .7], [10.75, 'E5', .2], [11.0, 'C5', .9], [12.0, 'E5', .45], [12.5, 'G5', .45], [13.0, 'A5', .9]];
-lead(M.map(([t, n, d]) => [t, NOTE(n), d]), .055);
-for (let t = 10.0; t < 15.5; t += .125) { const bar = Math.floor((t - 8) / 2) % 4, ch = PROG[bar][1], k = Math.round(t * 8) % 8; arp(t, ch[[0, 1, 2, 3, 2, 3, 1, 2][k]] + 12, .012 + .022 * smooth((t - 10) / 5), k % 2 ? .5 : -.5); }
+// 7.5 signal locked: a soft bell pair, then a reverse electric-piano chord that lands on 8.0
+bell(7.5, NOTE('C#5'), .045, -.2, 2); bell(7.5, NOTE('F#5'), .035, .2, 2);
+reverseEP(8.0, 1.2, notes('F#3 C#4 E4 A4'), .035);
 
-// 13–16 countdown: the snare steps out, the arp climbs, the bells count E–G–B; then the half-second breath
-for (const [t, n] of [[13.5, 'E5'], [14.5, 'G5'], [15.5, 'B5']]) bell(t, NOTE(n), .065, 0, 2.2);
-revCym(16.0, 2.0, .07);
+// 8–13 the mark rises: a half-time outrun groove; strings, electric piano and the breathy lead build by addition
+bloom(8.0, NOTE('F#1'), 1.5, .13);
+for (let b = 8.0; b < 15.5; b += 2) { kick(b, .65); kick(b + .75, .5); if (b + 1.25 < 15.5) kick(b + 1.25, .35); }
+for (let b = 9.0; b < 13.5; b += 2) clap(b, .7 + .3 * smooth((b - 9) / 4));
+for (let t = 8.0; t < 15.5; t += .25) { const off = Math.round(t * 4) % 2; hat(t, (off ? .018 : .008) * (.6 + .4 * smooth((t - 8) / 5)), off ? .3 : -.3); }
+for (let t = 8.0; t < 16.0; t += .25) { const bar = Math.floor((t - 8) / 2) % 4; drive(t, PROG[bar][0] + (Math.round(t * 4) % 2 ? 12 : 0), .17 + .03 * smooth((t - 8) / 7)); }
+for (let b = 0; b < 4; b++) strings(8 + b * 2, 2.1, PROG[b][1], .016, { atk: .3, rel: .35 });
+for (let b = 0; b < 4; b++) for (const off of [.5, 1.5]) { const t = 9 + b * 2 + off - 1; if (t < 9) continue; PROG[b][1].forEach((n, j) => ep(t + j * .008, n + 12, .016 + .008 * smooth((t - 9) / 5), j % 2 ? .35 : -.35)); }
+const M = [[8.0, 'C#5', 1.4], [9.5, 'B4', .45], [10.0, 'A4', .9], [11.0, 'F#4', .7], [11.75, 'A4', .2], [12.0, 'C#5', .7], [12.75, 'E5', .9]];
+lead(M.map(([t, n, d]) => [t, NOTE(n), d]), .05);
+for (const [t, p] of [[10.0, -.5], [10.4, -.2], [10.8, .1]]) glass(t, NOTE('F#6'), .012, p);   // the three readouts
 
-// 16–20 lockup: the B resolves to C; the lead plays the hook in C major over a wide pad
-bloom(16.0, NOTE('C2'), 3, .22);
-bell(16.0, NOTE('C6'), .05, 0, 3);
-pad(15.98, 3.9, notes('C3 G3 B3 D4 E4 G4'), .055, { atk: .3, rel: 1.2 });
-for (let t = 16.0; t < 19.4; t += .125) seqBass(t, NOTE('C2') + bassPat[Math.round(t * 8) % 8], .15 * (1 - .5 * smooth((t - 16) / 3.4)));
-for (let t = 16.0; t < 19.0; t += .5) kick(t, .5 - (t - 16) * .08);
-for (const t of [16.5, 17.5, 18.5]) snare(t, .6 - (t - 16.5) * .15);
-for (let t = 16.0; t < 19.0; t += .25) if (Math.round(t * 4) % 2) hat(t, .016 * (1 - (t - 16) / 3.4), .3);
-const H = [[16.0, 'C6', .7], [16.75, 'B5', .2], [17.0, 'G5', .45], [17.5, 'E5', .45], [18.0, 'D5', .45], [18.5, 'E5', .3], [18.75, 'G5', .6]];
-lead(H.map(([t, n, d]) => [t, NOTE(n), d]), .062);
-tick(19.35, .14, .2);
+// 13–16 three exits: the DARKWINTER SONIC LOGO — the signal bell climbs 3–5–7 of the new key (C#–E–G#),
+// the leading tone hangs through the breath, and resolves up to the tonic (A) as the wordmark lands
+for (const [t, n] of [[13.5, 'C#5'], [14.5, 'E5'], [15.5, 'G#5']]) bell(t, NOTE(n), .07, 0, 2.2);
+strings(13.0, 2.6, notes('E3 G#3 B3 D4 F#4'), .018, { atk: 1.6, rel: .3 });
+
+// 16–20 lockup in A major: the bell resolves, the lead plays a short answering phrase, and the drive thins out
+bell(16.0, NOTE('A5'), .08, 0, 3); bell(16.0, NOTE('E5'), .04, -.3, 3); bell(16.02, NOTE('C#6'), .03, .3, 3);
+bloom(16.0, NOTE('A1'), 3, .2);
+strings(15.98, 3.9, notes('A2 E3 G#3 B3 C#4 E4'), .022, { atk: .35, rel: 1.2 });
+for (let t = 16.0; t < 19.4; t += .25) drive(t, NOTE('A1') + (Math.round(t * 4) % 2 ? 12 : 0), .15 * (1 - .5 * smooth((t - 16) / 3.4)));
+for (const t of [16.0, 16.75, 18.0, 18.75]) kick(t, .5 - (t - 16) * .08);
+clap(17.0, .6); clap(19.0, .35);
+for (let t = 16.0; t < 19.0; t += .25) if (Math.round(t * 4) % 2) hat(t, .015 * (1 - (t - 16) / 3.4), .3);
+const H = [[16.5, 'E5', .45], [17.0, 'C#5', .45], [17.5, 'B4', .45], [18.0, 'A4', 1.1]];
+lead(H.map(([t, n, d]) => [t, NOTE(n), d]), .045);
 
 /* ---------- buses: chorus, reverb, delay, sidechain, tape, master ---------- */
 // chorus: two modulated delays, opposite phase per side
