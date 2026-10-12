@@ -1,0 +1,139 @@
+<meta charset="utf-8">
+<title>darkwinter Signal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a quiet broadcast-console page; each live mark is the only loud thing in its block. Single dark look by choice, so the eras read true. */
+  :root {
+    --ink: #0d0a14; --panel: #161120; --line: #2c2440; --text: #ece6f7; --muted: #a79cbf; --accent: #ff2e88;
+    --display: 'Michroma', 'Arial Black', system-ui, sans-serif;
+    --body: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  html, body { background: var(--ink); color: var(--text); }
+  body { font: 16px/1.6 var(--body); }
+  main { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; display: grid; gap: 56px; }
+  h1, h2 { font-family: var(--display); font-weight: 400; margin: 0; text-wrap: balance; letter-spacing: .02em; }
+  h1 { font-size: clamp(26px, 4.4vw, 42px); line-height: 1.15; }
+  h2 { font-size: clamp(18px, 2.4vw, 22px); line-height: 1.3; }
+  p { margin: 0; max-width: 64ch; }
+  .lede { color: var(--muted); font-size: 17px; }
+  .eyebrow { font: 500 12px/1.4 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  header, section { display: grid; gap: 16px; }
+
+  /* the hero mock: copy on the left, the live mark on the right */
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); background: #0b0612; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+  .hero .copy { padding: clamp(24px, 5vw, 56px); display: grid; gap: 18px; align-content: center; }
+  .hero .copy h2 { font-size: clamp(22px, 3.4vw, 34px); line-height: 1.2; }
+  .hero .copy p { color: #c9bfe0; }
+  .cta { justify-self: start; font: 600 14px/1 var(--body); color: #0b0612; background: #ff2e88; padding: 14px 20px; border-radius: 999px; text-decoration: none; }
+  .hero darkwinter-signal { min-height: 520px; border-radius: 0; }
+  @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } .hero darkwinter-signal { min-height: 440px; } }
+
+  .uses { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .use { display: grid; grid-template-rows: auto 1fr; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); }
+  .use darkwinter-signal { height: 300px; min-height: 0; }
+  .use .cap { padding: 16px 18px 18px; display: grid; gap: 6px; align-content: start; }
+  .use h3 { margin: 0; font: 600 15px/1.3 var(--body); }
+  .use p { color: var(--muted); font-size: 14px; }
+
+  pre { margin: 0; overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; font: 13px/1.6 var(--mono); color: #ddd3f2; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font: 500 12px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  td code, p code { font: 13px var(--mono); color: #f3c3dc; }
+  .log { font: 13px/1.7 var(--mono); color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; min-height: 120px; max-height: 220px; overflow-y: auto; font-variant-numeric: tabular-nums; }
+  .log b { color: var(--text); font-weight: 500; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; align-items: start; }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Interactive mark · website component</span>
+    <h1>darkwinter Signal</h1>
+    <p class="lede">The 3D darkwinter mark with the Mark Lab sounds, packaged as one drop-in element. Move over it and the hypercube turns through the fourth dimension, playing the era's scale. Click or tap to send a signal, which plays the darkwinter sonic logo. Sound stays off until a visitor turns it on.</p>
+  </header>
+
+  <section aria-labelledby="hero-h">
+    <span class="eyebrow">Homepage hero</span>
+    <div class="hero">
+      <div class="copy">
+        <h2 id="hero-h">Intelligence for uncertain times.</h2>
+        <p>An AI operating system for mission-driven founders, built for the long game. Turn the mark, then send a signal.</p>
+        <a class="cta" href="#embed">Get the embed</a>
+      </div>
+      <darkwinter-signal era="01" eras="01,02,05,06,00" label="The darkwinter mark. Press to send a signal."></darkwinter-signal>
+    </div>
+  </section>
+
+  <section aria-labelledby="uses-h">
+    <span class="eyebrow">Other places on the site</span>
+    <h2 id="uses-h">One element, set per page</h2>
+    <div class="uses">
+      <article class="use">
+        <darkwinter-signal era="00" hint="off" label="The darkwinter mark, signature version."></darkwinter-signal>
+        <div class="cap"><h3>About and founder pages</h3><p>The Mark era: black on paper, quiet clean tones. Sits beside the founder letter as a signature.</p></div>
+      </article>
+      <article class="use">
+        <darkwinter-signal era="05" hint="off" label="Lost signal. Press to send a signal home."></darkwinter-signal>
+        <div class="cap"><h3>404: lost signal</h3><p>The Noir era with rain and a neon hum. "This page went dark. Send a signal home."</p></div>
+      </article>
+      <article class="use">
+        <darkwinter-signal era="02" hint="off" label="Mission control. Press to send a signal."></darkwinter-signal>
+        <div class="cap"><h3>Product and waitlist</h3><p>The Cassette era for the product story. Fire a signal on waitlist sign-up as the confirmation moment.</p></div>
+      </article>
+    </div>
+  </section>
+
+  <section id="embed" aria-labelledby="embed-h">
+    <span class="eyebrow">Embed</span>
+    <h2 id="embed-h">Two files, one tag</h2>
+    <p>Host <code>darkwinter-signal.js</code> and <code>darkwinter-signal-sound.js</code> side by side on the site. The sound file only downloads when a visitor turns sound on. It works in Webflow, Framer, Next.js or plain HTML.</p>
+<pre>&lt;script type="module" src="/js/darkwinter-signal.js"&gt;&lt;/script&gt;
+
+&lt;darkwinter-signal era="01" eras="01,02,05,06,00"
+  style="height: 520px"&gt;&lt;/darkwinter-signal&gt;</pre>
+    <div class="two">
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Attribute</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>era</code></td><td>00 Mark, 01 Synthwave, 02 Cassette, 05 Noir, 06 Colony. Default 01.</td></tr>
+            <tr><td><code>eras</code></td><td>Comma list that shows an era switcher.</td></tr>
+            <tr><td><code>hint</code></td><td><code>off</code> hides the first-run hint.</td></tr>
+            <tr><td><code>label</code></td><td>The accessible name for screen readers.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Event</th><th>When it fires</th></tr></thead>
+          <tbody>
+            <tr><td><code>dw-signal</code></td><td>A visitor sends a signal (click, tap, Enter or Space).</td></tr>
+            <tr><td><code>dw-sound</code></td><td>Sound turns on or off; <code>detail.on</code>.</td></tr>
+            <tr><td><code>dw-era</code></td><td>The era changes; <code>detail.era</code>, <code>detail.name</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="log-h">
+    <span class="eyebrow">Analytics hooks</span>
+    <h2 id="log-h">Events from this page</h2>
+    <p>Each interaction above is logged here, the same events you would send to analytics.</p>
+    <div class="log" id="log" aria-live="polite">Nothing yet. Click a mark, switch an era or turn sound on.</div>
+  </section>
+</main>
+
+<script type="module">
+  import '../dist/darkwinter-signal.js';
+  const log = document.getElementById('log'); let first = true; const t0 = performance.now();
+  for (const ev of ['dw-signal', 'dw-sound', 'dw-era']) document.addEventListener(ev, e => {
+    if (first) { log.textContent = ''; first = false; }
+    const row = document.createElement('div'), s = ((performance.now() - t0) / 1000).toFixed(1).padStart(6, ' ');
+    row.innerHTML = `${s}s  <b>${ev}</b>  ${JSON.stringify(e.detail)}`; log.prepend(row);
+  });
+</script>
