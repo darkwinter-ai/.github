@@ -24,6 +24,6 @@ The copy is a draft: "Building is a night drive" pairs with the Synthwave era's 
 npm ci                                  # from the repo root (three.js for the render page)
 node audio.mjs                          # → soundtrack.wav
 node render.mjs                         # → video-only.mp4 (~9 min, software WebGL)
-ffmpeg -i video-only.mp4 -i soundtrack.wav -af "loudnorm=I=-14:TP=-1,volume=-1.8dB" \
+ffmpeg -i video-only.mp4 -i soundtrack.wav -af "loudnorm=I=-14:TP=-1,volume=-2.2dB" \
   -c:v libx264 -crf 19 -pix_fmt yuv420p -c:a aac -b:a 256k -shortest nightdrive.mp4
 ```
