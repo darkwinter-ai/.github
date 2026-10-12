@@ -68,6 +68,13 @@ function slotText(ctx, final, shown, x, y, spacing = 0) {
   for (let i = 0; i < shown.length; i++) { if (shown[i] !== ' ') ctx.fillText(shown[i], cx + ws[i] / 2 - spacing / 2, y); cx += ws[i]; }
   ctx.textAlign = 'left';
 }
+function strokeSlots(ctx, final, shown, x, y, spacing = 0) {
+  const ws = [...final].map(c => ctx.measureText(c).width + spacing);
+  const tw = ws.reduce((a, b) => a + b, 0) - spacing; let cx = x - tw / 2;
+  ctx.textAlign = 'center';
+  for (let i = 0; i < shown.length; i++) { if (shown[i] !== ' ') ctx.strokeText(shown[i], cx + ws[i] / 2 - spacing / 2, y); cx += ws[i]; }
+  ctx.textAlign = 'left';
+}
 const fitSize = (ctx, str, tmpl, maxW, maxSize, spacing = 0) => { let s = maxSize; for (; s > 10; s--) { ctx.font = tmpl.replace('SZ', s); if (ctx.measureText(str).width + spacing * (str.length - 1) <= maxW) break; } return s; };
 
 /* ---------- soft camera sways on the swells (no jolts) ---------- */
@@ -212,8 +219,8 @@ const nodes = new THREE.InstancedMesh(new THREE.SphereGeometry(.013, 10, 8), new
 const core = new THREE.Mesh(new THREE.SphereGeometry(.03, 20, 16), new THREE.MeshBasicMaterial({ color: C('#ffffff').multiplyScalar(1.3), fog: false })); mark.add(core);
 // a dark disc behind the mark so it reads against the sun and the sky
 const backC = mk(256, 256), bx = backC.getContext('2d'), bg = bx.createRadialGradient(128, 128, 0, 128, 128, 128);
-bg.addColorStop(0, 'rgba(11,6,18,.85)'); bg.addColorStop(.6, 'rgba(11,6,18,.55)'); bg.addColorStop(1, 'rgba(11,6,18,0)'); bx.fillStyle = bg; bx.fillRect(0, 0, 256, 256);
-const backing = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2), new THREE.MeshBasicMaterial({ map: texFrom(backC), transparent: true, depthWrite: false, fog: false, opacity: 0 }));
+bg.addColorStop(0, 'rgba(11,6,18,.92)'); bg.addColorStop(.55, 'rgba(11,6,18,.75)'); bg.addColorStop(1, 'rgba(11,6,18,0)'); bx.fillStyle = bg; bx.fillRect(0, 0, 256, 256);
+const backing = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial({ map: texFrom(backC), transparent: true, depthWrite: false, fog: false, opacity: 0 }));
 backing.position.z = -.4; markRoot.add(backing);
 const m4 = new THREE.Matrix4();
 
@@ -228,8 +235,8 @@ function render3D(t) {
   const hp = new THREE.Vector3(0, 0, -119).project(camera); horizonY.v = (1 - hp.y) / 2 * H;
   // sun climbs behind the mountains from 7.5
   const rise = E.outCubic(prog(t, 7.3, 11.5));
-  sun.position.set(0, lerp(-16, 7, rise), -108); sunMat.uniforms.uT.value = t;
-  sunGlow.position.set(0, sun.position.y + 2, -109); sunGlow.material.opacity = .2 + .4 * rise;
+  sun.position.set(0, lerp(-16, 4, rise), -108); sunMat.uniforms.uT.value = t;
+  sunGlow.position.set(0, sun.position.y + 2, -109); sunGlow.material.opacity = .15 + .2 * rise;
   // lamps
   LAMPS.forEach((L, i) => { const z = L.z0 + (D - Dist(5)); L.g.position.z = z; L.g.visible = z < 3;
     const on = t >= L.t ? (t < L.t + .12 ? (h2(i, Math.floor(t * 40)) > .35 ? 1 : .25) : 1) : 0;
@@ -241,9 +248,9 @@ function render3D(t) {
   const lt = t - 8.0, back = x => E.outBack(clamp(x));
   markRoot.visible = t >= 7.95;
   const climb = E.outCubic(prog(t, 8.0, 10.8)), push = E.inOutCubic(prog(t, 13, 15.4)), rest = E.inOutCubic(prog(t, 15.6, 16.2));
-  markRoot.position.set(0, lerp(-5.5, 10.2, climb) + push * .6 - rest * .3, lerp(-36, -31, push));
+  markRoot.position.set(0, lerp(-5.5, 11.6, climb) + push * .6 - rest * .3, lerp(-36, -31, push));
   markRoot.scale.setScalar(4.2);
-  backing.material.opacity = climb * .9;
+  backing.material.opacity = climb;
   frame.scale.setScalar(back(lt / .55)); ring.scale.setScalar(back((lt - .35) / .5));
   const unfold = E.outCubic(prog(lt, .7, 1.6));
   const ang = (t - 8) * .6 * (1 - rest), P = project(ang, ang * .37);
@@ -255,7 +262,7 @@ function render3D(t) {
   mark.rotation.set(Math.sin(t * .5) * .12 * (1 - rest), Math.sin(t * .7) * .45 * (1 - rest), 0);
   // the breath before GO: the world dims for half a second, then opens on the lockup
   const breath = smooth(prog(t, 15.45, 15.75)) * (1 - smooth(prog(t, 15.9, 16.1)));
-  const gain = 1 - .45 * breath; groundMat.uniforms.uGain.value = gain; sunMat.uniforms.uGain.value = gain * .5;
+  const gain = 1 - .45 * breath; groundMat.uniforms.uGain.value = gain; sunMat.uniforms.uGain.value = gain * .38;
   bloom.strength = (.8 + .25 * Math.exp(-Math.max(0, t - 16) * 2) * (t > 16 ? 1 : 0)) * (1 - .4 * breath);
   composer.render();
 }
@@ -312,7 +319,12 @@ function lockup(t) {
   ctx.globalAlpha = E.outCubic(prog(t, 15.95, 16.4)) * a; ctx.fillStyle = band; ctx.fillRect(0, 1180, W, 540);
   ctx.globalAlpha = a;
   const word = 'darkwinter.ai', sz = fitSize(ctx, word, "900 SZpx 'Orbitron'", 940, 118, 4);
-  chrome(ctx, word, decode(word, t, 16.0, { seed: 60, stagger: .04, dur: .25 }), W / 2, 1440, sz, 4, 1 + .6 * Math.exp(-Math.max(0, t - 16) * 2));
+  const shownW = decode(word, t, 16.0, { seed: 60, stagger: .04, dur: .25 }), glowW = 1 + .6 * Math.exp(-Math.max(0, t - 16) * 2);
+  ctx.font = `900 ${sz}px 'Orbitron'`; ctx.lineJoin = 'round';
+  // wordmark: near-white letters with a dark outline for separation and a pink neon glow behind them
+  ctx.shadowColor = rgba(K.pink, .9); ctx.shadowBlur = 34 * glowW; ctx.fillStyle = rgba(K.pink, .9); slotText(ctx, word, shownW, W / 2, 1440, 4); ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(11,6,18,.9)'; ctx.lineWidth = 8; strokeSlots(ctx, word, shownW, W / 2, 1440, 4);
+  ctx.fillStyle = '#fff4fa'; slotText(ctx, word, shownW, W / 2, 1440, 4);
   const tag = 'INTELLIGENCE FOR UNCERTAIN TIMES'; ctx.font = "36px 'Oxanium'"; ctx.fillStyle = K.ice; ctx.shadowColor = K.pink; ctx.shadowBlur = 14;
   slotText(ctx, tag, decode(tag, t, 16.45, { seed: 61, stagger: .018 }), W / 2, 1515, 5); ctx.shadowBlur = 0;
   const lw = 520 * E.outExpo(prog(t, 16.3, 17)); ctx.fillStyle = K.pink; ctx.fillRect(W / 2 - lw / 2, 1468, lw, 3);
