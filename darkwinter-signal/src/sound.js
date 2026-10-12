@@ -2,6 +2,7 @@
 // The per-era kits come from the Mark Lab (darkwinter-mark), plus the darkwinter signal bell and sonic logo
 // from SOUND.md: the bell climbs scale degrees 3–5–7 and resolves up to the tonic.
 import * as Tone from 'tone';
+export { Tone };   // the kit renderer (kit/render.mjs) uses the same instance for Tone.Offline
 
 export const KITS = {
   '00': { lead: 'sine', pad: 'sine', scale: ['D5', 'F5', 'A5', 'C6', 'E6'], chord: ['D4', 'A4', 'E5', 'F5'], bass: 'D2', click: 'tick', kick: false, rev: 1.8, revWet: .2, dly: 0, drone: ['D3', 'A3'], droneVol: -30, logo: ['A4', 'C5', 'E5', 'F5'] },
@@ -41,6 +42,7 @@ export function makeKit(id) {
   let lastNote = 0;
 
   return {
+    ready: rev.ready,
     // the build: clicks, a run up the scale, a riser, then the chord and the bell (Mark Lab)
     build() {
       const t = now(), S = k.scale;
@@ -66,6 +68,14 @@ export function makeKit(id) {
     },
     // a single note of the era's scale, for the pointer: rate-limited so a fast drag stays musical
     note(i, vel = .35) { const t = T.now(); if (t - lastNote < .085) return; lastNote = t; const S = k.scale; lead.triggerAttackRelease(S[((i % S.length) + S.length) % S.length], .09, t + .01, vel); },
+    // UI sounds for the product: quiet, short, and all on the era's own voices
+    ui(kind) { const t = now(), S = k.scale, [a3, a5, a7, a8] = k.logo;
+      if (kind === 'tap') (click && k.click === 'tick' ? click.triggerAttackRelease(S[2], '64n', t) : lead.triggerAttackRelease(S[2], .05, t, .35));
+      if (kind === 'hover') lead.triggerAttackRelease(S[0], .06, t, .18);
+      if (kind === 'success') { bell.triggerAttackRelease(a5, .5, t, .45); bell.triggerAttackRelease(a8, 1.4, t + .14, .6); }
+      if (kind === 'notify') { bell.triggerAttackRelease(a3, .6, t, .45); bell.triggerAttackRelease(a7, 1.2, t + .16, .5); }
+      if (kind === 'signal') { bell.triggerAttackRelease(a8, 1.6, t, .6); pad.triggerAttackRelease(k.chord.slice(0, 2), .9, t, .3); }
+    },
     settle() { const t = now(); pad.triggerAttackRelease(k.chord.slice(0, 3), 1.6, t, .4); },
     start() { drone.triggerAttack(k.drone, now()); lfo.start(); rain?.start(); buzz?.start(); },
     stop() { const t = now(); drone.releaseAll(t); rain?.stop(t + .3); buzz?.stop(t + .3); out.gain.rampTo(0, 1, t); setTimeout(() => nodes.forEach(n => { try { n.dispose(); } catch {} }), 2400); },

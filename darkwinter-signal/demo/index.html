@@ -46,6 +46,9 @@
   td code, p code { font: 13px var(--mono); color: #f3c3dc; }
   .log { font: 13px/1.7 var(--mono); color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; min-height: 120px; max-height: 220px; overflow-y: auto; font-variant-numeric: tabular-nums; }
   .log b { color: var(--text); font-weight: 500; }
+  .kit td:first-child { white-space: nowrap; font-weight: 600; }
+  .kit audio { width: min(260px, 70vw); height: 34px; display: block; }
+  .kit .f { font: 12px var(--mono); color: var(--muted); }
   .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; align-items: start; }
 </style>
 
@@ -84,6 +87,18 @@
         <darkwinter-signal era="02" hint="off" label="Mission control. Press to send a signal."></darkwinter-signal>
         <div class="cap"><h3>Product and waitlist</h3><p>The Cassette era for the product story. Fire a signal on waitlist sign-up as the confirmation moment.</p></div>
       </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="kit-h">
+    <span class="eyebrow">Sound kit</span>
+    <h2 id="kit-h">The same sounds, for every channel</h2>
+    <p>Rendered from the same engine as the element above, so the website, the product and the films all share one voice. Every file is in <code>darkwinter-signal/kit/</code> as a 48 kHz WAV.</p>
+    <div class="tablewrap">
+      <table class="kit">
+        <thead><tr><th>Channel</th><th>Use it for</th><th>Sound</th></tr></thead>
+        <tbody id="kit"></tbody>
+      </table>
     </div>
   </section>
 
@@ -130,6 +145,26 @@
 
 <script type="module">
   import '../dist/darkwinter-signal.js';
+  const KIT = '../kit/', EXT = '.wav';
+  const ROWS = [
+    ['Product UI', 'Button press', 'ui/darkwinter-ui-tap'],
+    ['Product UI', 'Menu hover (optional, very quiet)', 'ui/darkwinter-ui-hover'],
+    ['Product UI', 'Task done, plan saved', 'ui/darkwinter-ui-success'],
+    ['Product UI', 'New insight or alert', 'ui/darkwinter-ui-notify'],
+    ['Product UI', 'Daily brief is ready', 'ui/darkwinter-ui-signal'],
+    ['Video and social', 'End card of a Transmission, LinkedIn video or Reel', 'sting/darkwinter-sting-01-synthwave'],
+    ['Video and social', 'End card, cassette era', 'sting/darkwinter-sting-02-cassette'],
+    ['Video and social', 'End card, noir era', 'sting/darkwinter-sting-05-noir'],
+    ['Podcast and Threshold', 'Episode open: the sonic logo', 'logo/darkwinter-logo-00-mark'],
+    ['Podcast and Threshold', 'Bed under the intro voice', 'ambience/darkwinter-ambience-06-colony'],
+    ['Podcast and Threshold', 'Episode close', 'sting/darkwinter-sting-00-mark'],
+    ['Events and keynotes', 'Walk-on, or the section change in a talk', 'logo/darkwinter-logo-01-synthwave'],
+    ['Events and keynotes', 'Booth screen or lobby loop', 'ambience/darkwinter-ambience-01-synthwave'],
+    ['Sales demos and webinars', 'Intro before the screen share', 'logo/darkwinter-logo-02-cassette'],
+    ['Sales demos and webinars', 'Waiting-room bed', 'ambience/darkwinter-ambience-02-cassette'],
+  ];
+  document.getElementById('kit').innerHTML = ROWS.map(([c, u, f]) => `<tr><td>${c}</td><td>${u}</td><td><audio controls preload="none" src="${KIT + f + EXT}"></audio><span class="f">${f.split('/')[1]}.wav</span></td></tr>`).join('');
+
   const log = document.getElementById('log'); let first = true; const t0 = performance.now();
   for (const ev of ['dw-signal', 'dw-sound', 'dw-era']) document.addEventListener(ev, e => {
     if (first) { log.textContent = ''; first = false; }

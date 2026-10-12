@@ -40,6 +40,19 @@ Theming: the element sets `--bg` and `--fg` from the era. Style the outer box (h
 - **iPhone and iPad:** the audio context and a silent media element start inside the tap that turns sound on, so sound plays even with the ringer switch on silent. This is the same fix as the Mark Lab.
 - **No network calls, no cookies, no storage.**
 
+## Sound kit
+
+`kit/` holds the same sounds as files, rendered offline from `dist/darkwinter-signal-sound.js` (48 kHz WAV). Every channel uses the voice the website uses.
+
+| Folder | Files | Level | Channel |
+|---|---|---|---|
+| `kit/logo/` | The sonic logo per era (4 s) | Peak −1 dBFS | Podcast and Threshold opens, keynote walk-ons, webinar intros |
+| `kit/sting/` | The build plus the sonic logo per era (6 s) | Peak −1 dBFS | End cards for Transmissions, LinkedIn video and Reels; podcast close |
+| `kit/ui/` | `tap`, `hover`, `success`, `notify`, `signal` on the clean Mark voices | Peak −6 to −14 dBFS | Product UI: buttons, task done, a new insight, the daily brief |
+| `kit/ambience/` | A 20 s bed per era, faded in and out | −24 LUFS | Under an intro voice, booth screens, waiting rooms |
+
+Rebuild with `node darkwinter-signal/kit/render.mjs` (after `node darkwinter-signal/build.mjs`).
+
 ## Build
 
 ```sh
