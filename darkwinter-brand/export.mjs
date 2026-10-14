@@ -64,7 +64,7 @@ for (const [id, name, c] of ERAS) await out(`png/darkwinter-tile-${id}-${name}-1
 /* ---------- favicons and app icons ---------- */
 const smallTile = px => raster(svgMark({ ink: INK, small: true }), px, { bg: PAPER, radius: .22, fill: .86 });
 const ico = [];
-for (const px of [16, 32, 48]) ico.push([px, await smallTile(px)]);
+for (const px of [16, 32, 48]) { const png = await smallTile(px); ico.push([px, png]); await out(`favicon/favicon-${px}.png`, png); }
 { // ICO container with PNG entries
   const head = Buffer.alloc(6 + 16 * ico.length); head.writeUInt16LE(0, 0); head.writeUInt16LE(1, 2); head.writeUInt16LE(ico.length, 4);
   let off = head.length; ico.forEach(([px, png], i) => { const e = 6 + i * 16; head.writeUInt8(px, e); head.writeUInt8(px, e + 1); head.writeUInt8(0, e + 2); head.writeUInt8(0, e + 3);
