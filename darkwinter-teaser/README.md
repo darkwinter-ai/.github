@@ -18,7 +18,13 @@ A 20-second vertical teaser (1080×1920, 60 fps) for darkwinter.ai. It's built o
 - RGB channel split, slice displacement and datamosh-style smear blocks, driven by a glitch timeline
 - Scanlines, a rolling refresh bar, film grain and a CRT switch-on/off mask
 
-**Sound:** `audio.mjs` synthesizes a dark synthwave score at 120 BPM in D minor. It includes a gated-reverb snare, a sequenced saw bass, a square-wave arpeggio through a ping-pong delay, pads, risers, a tom fill, an accelerating snare roll, glitch bursts and CRT zaps. Every hit lands on a visual event.
+**Sound (v2):** `audio.mjs` is the teaser's own score under the darkwinter sound rules ([`../SOUND.md`](../SOUND.md)). It is in D minor and lifts to F major for the lockup, with a synthwave groove, a soft roomy backbeat, a square arp and sixteenth-note octave bass. There are no impacts, crashes or snare rolls.
+- The core ignites on a reverse swell.
+- In the chaos act the pad drifts out of tune, then glides back into tune the moment the scan beam snaps the city into order.
+- The triangle traces itself as a rising run.
+- The rush carries the sonic logo, A–C–E, then the breath, then the resolve to F on the wordmark.
+
+The camera shake is now four slow sways. The glitches keep full strength in the chaos act and are calmer elsewhere.
 
 ## Build
 

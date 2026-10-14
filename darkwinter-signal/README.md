@@ -24,6 +24,7 @@ It is a standard custom element in shadow DOM, so it works in Webflow (custom co
 | `era` | `00` Mark, `01` Synthwave, `02` Cassette, `03` Atomic, `04` Vector, `05` Noir, `06` Colony. Default `01`. |
 | `eras` | A comma-separated list of eras; shows an era switcher. |
 | `hint` | `off` hides the "Move to tune · Tap to send a signal" hint. |
+| `pose` | `rest` holds the still logo pose: no spin and no pointer turn. Use it where motion would distract, or for a static hero. |
 | `label` | The accessible name. |
 | `.signal()`, `.build()` | Send a signal, or replay the build, from your own code (for example, on waitlist sign-up). |
 | `dw-signal`, `dw-sound`, `dw-era` | Events for analytics. They bubble and cross the shadow boundary. |

@@ -9,7 +9,7 @@
 //   <darkwinter-signal era="01" eras="01,02,05,00" style="height:520px"></darkwinter-signal>
 //
 // Attributes: era (00 Mark, 01 Synthwave, 02 Cassette, 03 Atomic, 04 Vector, 05 Noir, 06 Colony), eras (adds a switcher), hint ("off"
-// hides the first-run hint), label (accessible name). Methods: signal(), build(). Events: dw-signal, dw-era,
+// hides the first-run hint), pose ("rest" holds the still logo pose: no spin, no pointer turn), label (accessible name). Methods: signal(), build(). Events: dw-signal, dw-era,
 // dw-sound (detail.on).
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -29,7 +29,7 @@ export const ERAS = {
   '03': { name: 'Atomic', bg: '#f1e4c3', fg: '#1f2a3a', frame: '#c8402b', ring: '#2f7f7a', tess: '#1f2a3a', core: '#e9b949', bloom: 0, mode: 'toon', sunburst: ['#f1e4c3', '#ecd28f'], overlay: 'halftone' },
   '04': { name: 'Vector', bg: '#020604', fg: '#39ff88', frame: '#39ff88', ring: '#39ff88', tess: '#e6fff0', core: '#39ff88', bloom: .7, mode: 'wire', grid: '#0f5a32', overlay: 'scan' },
   '05': { name: 'Noir', bg: '#060914', fg: '#22e1ff', frame: '#ff2fb3', ring: '#22e1ff', tess: '#ffffff', core: '#ffd1f0', bloom: .9, mode: 'neon' },
-  '06': { name: 'Colony', bg: '#f2c79a', fg: '#2b3a3f', frame: '#f6eedc', ring: '#7fc4cf', tess: '#2b3a3f', core: '#fff2cf', bloom: 0, mode: 'ceramic' },
+  '06': { name: 'Colony', bg: '#f2c79a', fg: '#2b3a3f', frame: '#f6eedc', ring: '#7fc4cf', tess: '#2b3a3f', core: '#fff2cf', bloom: 0, mode: 'ceramic', horizon: [['#f7d9a8', 0], ['#f2a477', .62], ['#84ad63', .622], ['#5f8a4f', 1]] },
 };
 
 /* ---------- shared geometry: the logo's proportions ---------- */
@@ -225,7 +225,10 @@ class DarkwinterSignal extends HTMLElement {
     const e = ERAS[this.#eraId], T = this.#three, C = c => new THREE.Color(c);
     T.fog.color = C(e.bg); T.scene.fog = e.bloom > 0 ? T.fog : null;
     if (e.sunburst) { const x = T.sb.getContext('2d'), n = 30; for (let i = 0; i < n; i++) { x.fillStyle = e.sunburst[i % 2]; x.beginPath(); x.moveTo(512, 512); x.arc(512, 512, 760, i / n * Math.PI * 2, (i + 1) / n * Math.PI * 2); x.fill(); }
-      T.sunburst.needsUpdate = true; T.scene.background = T.sunburst; } else T.scene.background = C(e.bg);
+      T.sunburst.needsUpdate = true; T.scene.background = T.sunburst; }
+    else if (e.horizon) { const x = T.sb.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 1024); e.horizon.forEach(([c, o]) => g.addColorStop(o, c)); x.fillStyle = g; x.fillRect(0, 0, 1024, 1024);
+      T.sunburst.needsUpdate = true; T.scene.background = T.sunburst; }   // Colony: sunset sky over a meadow, as in the Mark Lab
+    else T.scene.background = C(e.bg);
     this.#root.querySelector('.fx').dataset.o = e.overlay || '';
     const wire = e.mode === 'wire'; T.frame.visible = T.ring.visible = !wire; T.frameEdges.visible = T.ringEdges.visible = wire;
     T.frameEdges.material.color.set(e.frame); T.ringEdges.material.color.set(e.ring);
@@ -262,8 +265,10 @@ class DarkwinterSignal extends HTMLElement {
     // the clock runs on real time so builds and ripples keep pace on slow devices; easing uses a capped step
     const S = this.#state, T = this.#three, reduce = this.#reduce.matches, dt = Math.min(.1, raw); S.clock += raw;
     // idle: a slow 4D turn; with the pointer: ease toward it
+    const still = this.getAttribute('pose') === 'rest';
+    if (still) { S.ta = S.tb = S.ttX = S.ttY = 0; S.lastMove = -9; }
     const active = S.clock - S.lastMove < 2.5;
-    if (!active && !reduce) { S.ta += dt * .35; S.tb += dt * .13; }
+    if (!active && !reduce && !still) { S.ta += dt * .35; S.tb += dt * .13; }
     const k = 1 - Math.exp(-dt * (active ? 6 : 2));
     S.a += (S.ta - S.a) * k; S.b += (S.tb - S.b) * k; S.tiltX += (S.ttX - S.tiltX) * k; S.tiltY += (S.ttY - S.tiltY) * k;
     // the pointer plays the scale: one note each time the hypercube turns another twelfth
@@ -271,7 +276,8 @@ class DarkwinterSignal extends HTMLElement {
     if (S.step !== null && step !== S.step && active && this.#soundOn) this.#kit?.note(step);
     S.step = step;
     // build
-    const lt = reduce ? 9 : S.clock - S.build0;
+    const lt = reduce || still ? 9 : S.clock - S.build0;
+    if (still) { S.a = S.b = S.tiltX = S.tiltY = 0; }
     T.frame.scale.setScalar(outBack(clamp(lt / .55))); T.ring.scale.setScalar(outBack(clamp((lt - .35) / .5))); T.frameEdges.scale.copy(T.frame.scale); T.ringEdges.scale.copy(T.ring.scale);
     const unfold = outCubic(clamp((lt - .7) / .9)), P = project(S.a, S.b * .6 + S.a * .37);
     for (let i = 0; i < E4.length; i++) { const [p, q] = E4[i]; T.tessPos.set([...P[p].map(v => v * unfold), ...P[q].map(v => v * unfold)], i * 6); }
@@ -284,7 +290,8 @@ class DarkwinterSignal extends HTMLElement {
       flare = Math.max(flare, (1 - u) ** 3 * (r.big ? 1 : .5)); });
     T.core.scale.setScalar((.2 + 1.4 * outCubic(clamp((lt - 1.35) / .4))) * (1 + flare * .9));
     T.bloom.strength = ERAS[this.#eraId].bloom * .55 * (1 + flare * .6);
-    T.mark.rotation.set(S.tiltX + (reduce ? 0 : Math.sin(S.clock * .5) * .06), S.tiltY + (reduce ? 0 : Math.sin(S.clock * .7) * .2), 0);
+    const calm = reduce || still;
+    T.mark.rotation.set(S.tiltX + (calm ? 0 : Math.sin(S.clock * .5) * .06), S.tiltY + (calm ? 0 : Math.sin(S.clock * .7) * .2), 0);
     T.mark.position.y = -.22;
     T.composer.render();
   }

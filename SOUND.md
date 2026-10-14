@@ -18,7 +18,7 @@ Every darkwinter film gets its own score: its own key, groove, instruments and m
 |---|---|---|---|---|
 | TX-02 Mission Control (`darkwinter-tx02/audio.mjs`) | A minor → C major | Felt kick on the quarter note, brushed hats | Spinning-up reel pad, filtered bass pulse, pluck arp, tape wobble that steadies | E–G–B → C |
 | TX-01 Night Drive (`darkwinter-nightdrive/audio.mjs`) | F♯ minor → A major | Half-time outrun: kick on 1 and the and-of-2, soft clap on 3 | String machine, FM electric piano, breathy lead, glass plucks for the lamps, reverse chord into the mark | C♯–E–G♯ → A |
+| Hero teaser (`darkwinter-teaser/audio.mjs`) | D minor → F major | Four-on-the-floor kick, soft roomy backbeat | Detuned saw pad that drifts out of tune in the chaos act and snaps back at 7 s, square arp through a ping-pong delay, sixteenth-note octave bass, a rising run as the triangle traces | A–C–E → F |
 
 `darkwinter-tx02/audio-synthwave.mjs` is an alternate TX-02 cut kept for comparison.
 
-The original hero teaser (`darkwinter-teaser/`) predates these rules and still uses hard hits.

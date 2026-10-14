@@ -104,19 +104,20 @@ const fit = (ctx, str, weight, family, maxW, maxSize) => { ctx.font = `${weight}
 
 /* ---------- impacts ---------- */
 const BEAT = .5;
-const HITS = [[2.0, .9], [4.0, 1], [6.0, .6], [7.0, .9], [8.0, 1.1], [12.0, .5], [16.0, 1.4]];
-const impulse = t => HITS.reduce((s, [h, a]) => { const d = t - h; return d >= 0 && d < .8 ? s + a * Math.exp(-d * 8) : s; }, 0);
+// v2: soft swells that match the score (no jolts); the chaos act keeps its glitches, the rest of the film calms down
+const HITS = [[2.0, .35], [7.0, .3], [8.0, .4], [16.0, .5]];
+const impulse = t => HITS.reduce((s, [h, a]) => { const d = t - h; return d >= 0 && d < 1.2 ? s + a * Math.sin(Math.PI * Math.min(1, d / .15) / 2) * Math.exp(-d * 3.5) : s; }, 0);
 function shake(t) {
   let x = 0, y = 0;
-  for (const [h, a] of HITS) { const d = t - h; if (d < 0 || d > .5) continue; const e = a * Math.exp(-d * 10); x += e * 14 * Math.sin(d * 97 + h * 5); y += e * 12 * Math.cos(d * 83 + h * 2); }
+  for (const [h, a] of HITS) { const d = t - h; if (d < 0 || d > 1.2) continue; const e = a * Math.sin(Math.PI * Math.min(1, d / .12) / 2) * Math.exp(-d * 4); x += e * 10 * Math.sin(d * 19 + h * 5); y += e * 8 * Math.cos(d * 15 + h * 2); }
   return { x: x + Math.sin(t * .9) * 3, y: y + Math.cos(t * .7) * 4 };
 }
 const GLITCH = [[4.0, 1], [4.5, .45], [5.0, .8], [5.25, .35], [5.5, .7], [5.75, .45], [6.0, .9], [6.5, .45], [6.75, .3], [7.0, 1.1],
-                [8.0, .55], [11.0, .22], [12.0, .5], [13.0, .3], [13.5, .4], [13.75, .55], [14.0, .7], [16.0, .9], [17.5, .7], [18.6, .3], [19.4, .5]];
+                [8.0, .25], [12.0, .15], [14.0, .25], [16.0, .35], [17.5, .2], [19.4, .3]];
 function glitchAmt(t, f) {
   let g = GLITCH.reduce((s, [h, a]) => { const d = t - h; return d >= 0 && d < .4 ? s + a * Math.exp(-d * 11) : s; }, 0);
   if (t > 4 && t < 7) g += h2(Math.floor(f / 2), 77) > .55 ? .25 : 0;          // chaos act: constant unrest
-  if (h2(Math.floor(f / 3), 13) > .955 && t > 1) g += .18;                       // stray interference
+  if (h2(Math.floor(f / 3), 13) > .955 && t > 1 && (t < 8 || t > 19)) g += .18;   // stray interference (not over the system build or the lockup)
   return g;
 }
 
