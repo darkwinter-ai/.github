@@ -31,7 +31,7 @@ The camera shake is now four slow sways. The glitches keep full strength in the 
 ```sh
 node audio.mjs        # → soundtrack.wav
 node render.mjs       # → video-only.mp4 (headless Chromium → ffmpeg)
-ffmpeg -i video-only.mp4 -i soundtrack.wav -af loudnorm=I=-14:TP=-1 \
+ffmpeg -i video-only.mp4 -i soundtrack.wav -af "loudnorm=I=-14:TP=-1,volume=-1.6dB" \
   -c:v libx264 -crf 18 -preset slow -pix_fmt yuv420p -c:a aac -b:a 256k -shortest teaser.mp4
 ```
 
