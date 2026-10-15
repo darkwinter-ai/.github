@@ -1,0 +1,315 @@
+<title>darkwinter.ai Concepts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Fragment+Mono&display=swap">
+<style>
+  /* Layout: a presentation page holding two live mockups at website scale, each followed by its design notes. Single dark look by choice: these are the site. */
+  :root {
+    --deep: #040810; --ground: #07090f; --raised: #0a0e1c; --line: #1c2338;
+    --text: #e8f0ff; --muted: #a5b3c9; --blue: #2f7bff; --cyan: #00d4ff; --violet: #b04dff; --beacon: #ff3b3b;
+    --sans: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+    --mono: 'Fragment Mono', ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  html, body { background: var(--ground); color: var(--text); }
+  body { font: 16px/1.6 var(--sans); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  main { max-width: 1240px; margin: 0 auto; padding-block: 40px 80px; display: grid; gap: 40px; }
+  h1, h2, h3 { margin: 0; font-weight: 500; text-wrap: balance; letter-spacing: -.01em; }
+  h1 { font-size: clamp(28px, 4.6vw, 44px); line-height: 1.08; }
+  .sec-h { font-size: clamp(21px, 2.6vw, 27px); }
+  p { margin: 0; max-width: 70ch; }
+  .muted { color: var(--muted); }
+  .label { font: 12px/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .label b { color: var(--beacon); font-weight: 400; }
+  header, section { display: grid; gap: 16px; }
+  a { color: var(--cyan); }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+  /* ===== mockup frame shared ===== */
+  .frame { position: relative; width: 100%; aspect-ratio: 16 / 9; min-height: 560px; border-radius: 16px; overflow: hidden; background: var(--deep); border: 1px solid var(--line); isolation: isolate; }
+  .frame .scan { position: absolute; inset: 0; pointer-events: none; z-index: 5; background: repeating-linear-gradient(180deg, rgba(255,255,255,0) 0 2px, rgba(0,0,0,.18) 2px 3px), radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.6)); }
+  .mono { font-family: var(--mono); }
+  .chipbtn { font: 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; background: rgba(4,8,16,.55); border: 1px solid rgba(232,240,255,.22); color: var(--text); border-radius: 999px; padding: 10px 14px; cursor: pointer; backdrop-filter: blur(6px); }
+  .chipbtn:hover { border-color: var(--text); }
+  .cta { font: 500 14px/1 var(--sans); background: var(--text); color: var(--deep); border: 0; border-radius: 999px; padding: 13px 18px; cursor: pointer; }
+  .ghost { font: 500 14px/1 var(--sans); background: transparent; color: var(--text); border: 1px solid rgba(232,240,255,.3); border-radius: 999px; padding: 12px 18px; cursor: pointer; }
+
+  /* ===== Concept A: The Signal ===== */
+  #A .ui { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+  #A .ui * { pointer-events: auto; }
+  #A .ui .passive, #A .ui .passive * { pointer-events: none; }
+  .topbar { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px; }
+  .brand { display: flex; align-items: center; gap: 10px; font: 500 17px var(--sans); letter-spacing: .01em; }
+  .brand svg { width: 26px; height: 26px; }
+  .topmid { font: 11px var(--mono); letter-spacing: .16em; color: var(--muted); text-transform: uppercase; }
+  .topright { display: flex; gap: 8px; align-items: center; }
+  .corner { position: absolute; width: 18px; height: 18px; border-color: rgba(0,212,255,.55); border-style: solid; }
+  .c1 { top: 64px; left: 18px; border-width: 1px 0 0 1px; } .c2 { top: 64px; right: 18px; border-width: 1px 1px 0 0; } .c3 { bottom: 18px; left: 18px; border-width: 0 0 1px 1px; } .c4 { bottom: 18px; right: 18px; border-width: 0 1px 1px 0; }
+  .readout { position: absolute; top: 70px; right: 28px; font: 11px/1.7 var(--mono); color: var(--muted); text-align: right; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+  .readout b { color: var(--beacon); font-weight: 400; }
+  .hero { position: absolute; left: clamp(20px, 4vw, 56px); top: 50%; transform: translateY(-56%); width: min(44%, 520px); display: grid; gap: 18px; }
+  .hero .eyebrow { font: 11px var(--mono); letter-spacing: .18em; color: var(--beacon); text-transform: uppercase; }
+  .hero h2 { font: 700 clamp(34px, 5.4vw, 72px)/.94 var(--sans); letter-spacing: -.02em; text-transform: uppercase; }
+  .hero h2 .glitch { color: var(--text); text-shadow: 2px 0 rgba(255,59,59,.65), -2px 0 rgba(0,212,255,.6); }
+  .hero p { color: #c3cee2; font-size: clamp(14px, 1.25vw, 17px); max-width: 44ch; }
+  .hero .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .term { position: absolute; left: clamp(20px, 4vw, 56px); bottom: 26px; font: 12px/1.75 var(--mono); color: #7fe8ff; letter-spacing: .03em; min-height: 84px; }
+  .term .dim { color: var(--muted); }
+  .legend { position: absolute; right: 26px; bottom: 24px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; max-width: 60%; }
+  .legend .chipbtn i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: 0; }
+  .legend .chipbtn[aria-pressed="true"] { border-color: var(--text); background: rgba(232,240,255,.1); }
+  svg.leader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 6; pointer-events: none; overflow: visible; }
+  .callout { box-sizing: border-box; position: absolute; z-index: 7; width: 270px; padding: 14px 16px; background: rgba(7,9,15,.82); border: 1px solid rgba(232,240,255,.18); border-radius: 12px; backdrop-filter: blur(8px); display: grid; gap: 6px; pointer-events: none; opacity: 0; transition: opacity .2s; }
+  .callout.on { opacity: 1; }
+  .callout .k { font: 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+  .callout h4 { margin: 0; font: 500 18px/1.2 var(--sans); }
+  .callout p { font-size: 13.5px; color: var(--muted); }
+  .callout .go { font: 11px var(--mono); color: var(--text); letter-spacing: .1em; text-transform: uppercase; }
+  .panel { position: absolute; z-index: 8; top: 70px; right: 22px; bottom: 22px; width: min(400px, 40%); background: rgba(7,9,15,.9); border: 1px solid rgba(232,240,255,.16); border-radius: 16px; padding: 22px; display: grid; gap: 14px; align-content: start; overflow-y: auto; transform: translateX(110%); transition: transform .5s cubic-bezier(.2,.8,.2,1); backdrop-filter: blur(10px); }
+  .panel.on { transform: none; }
+  .panel .k { font: 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+  .panel h3 { font: 500 26px/1.1 var(--sans); }
+  .panel ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; color: #c3cee2; font-size: 14.5px; }
+  .panel .res { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; }
+  .panel .res span { font: 11px var(--mono); color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+  .panel .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .back { font: 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0; justify-self: start; }
+  #A.sel .hero, #A.sel .term { opacity: 0; pointer-events: none; transition: opacity .3s; }
+  #A .hero, #A .term { transition: opacity .3s; }
+
+  /* ===== Concept B: The Operator ===== */
+  #B { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+  #B .console { position: relative; z-index: 6; display: grid; grid-template-rows: auto 1fr auto; border-right: 1px solid var(--line); background: linear-gradient(180deg, rgba(10,14,28,.9), rgba(4,8,16,.95)); min-height: 0; }
+  #B .chead { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; border-bottom: 1px solid var(--line); font: 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  #B .chead b { color: var(--beacon); font-weight: 400; }
+  #B .log { padding: 22px; display: grid; gap: 14px; align-content: start; overflow-y: auto; min-height: 0; font-size: 15px; }
+  #B .msg { display: grid; gap: 4px; max-width: 46ch; }
+  #B .msg .who { font: 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--cyan); }
+  #B .msg.you { justify-self: end; text-align: right; } #B .msg.you .who { color: var(--muted); }
+  #B .msg.you .txt { background: rgba(232,240,255,.08); border: 1px solid var(--line); border-radius: 12px 12px 2px 12px; padding: 10px 12px; }
+  #B .big { font: 700 clamp(26px, 3.2vw, 40px)/1 var(--sans); text-transform: uppercase; letter-spacing: -.015em; }
+  #B .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 22px 18px; }
+  #B .chips .chipbtn { text-transform: none; letter-spacing: 0; font: 14px/1.2 var(--sans); padding: 10px 14px; }
+  #B form { display: flex; gap: 8px; padding: 0 22px 18px; }
+  #B input { flex: 1; min-width: 0; font: 14px var(--sans); color: var(--text); background: rgba(4,8,16,.7); border: 1px solid rgba(232,240,255,.25); border-radius: 999px; padding: 11px 16px; }
+  #B .stage { position: relative; min-height: 0; }
+  #B .map { position: absolute; left: 16px; right: 16px; top: 14px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 6; }
+  #B .map span { font: 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; color: var(--muted); background: rgba(4,8,16,.6); transition: all .3s; }
+  #B .map span.lit { color: var(--text); border-color: currentColor; }
+  #B .brief { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 7; background: rgba(7,9,15,.92); border: 1px solid rgba(232,240,255,.18); border-radius: 14px; padding: 16px 18px; display: grid; gap: 8px; transform: translateY(120%); transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+  #B .brief.on { transform: none; }
+  #B .brief .k { font: 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+  #B .brief h4 { margin: 0; font: 500 20px/1.2 var(--sans); }
+  #B .brief ol { margin: 0; padding-left: 1.2em; color: #c3cee2; font-size: 14px; display: grid; gap: 3px; }
+  #B .brief .note { font: 11px/1.5 var(--mono); color: var(--muted); }
+  #B .progress { height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; } #B .progress i { display: block; height: 100%; width: 0; background: var(--cyan); transition: width 1.1s linear; }
+
+  /* notes */
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .note { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: grid; gap: 8px; align-content: start; }
+  .note h3 { font-size: 16px; } .note p, .note li { font-size: 14.5px; color: var(--muted); } .note ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 640px; }
+  th, td { text-align: left; padding: 11px 14px; vertical-align: top; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  th { font: 11.5px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: var(--raised); }
+  .pill { font: 11.5px var(--mono); padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+  .ready { color: var(--cyan); } .connect { color: var(--violet); } .cost { color: var(--beacon); }
+
+  @media (max-width: 820px) {
+    .frame { aspect-ratio: auto; height: 760px; min-height: 0; }
+    .hero { top: 92px; transform: none; width: auto; right: 20px; gap: 12px; }
+    .hero h2 { font-size: 40px; } .hero p { font-size: 14px; } .hero .row { display: none; }
+    .topright .cta { display: none; } .topbar { padding: 14px 16px; }
+    .readout, .topmid, .term { display: none; }
+    .legend { left: 16px; right: 16px; max-width: none; justify-content: center; }
+    .panel { top: auto; left: 12px; right: 12px; bottom: 12px; width: auto; max-height: 64%; transform: translateY(110%); }
+    .callout { display: none; }
+    #B { grid-template-columns: 1fr; grid-template-rows: 1fr 300px; height: 860px; }
+    #B .console { border-right: 0; border-bottom: 1px solid var(--line); }
+  }
+</style>
+
+<main>
+  <header>
+    <span class="label">Mockups for review · live and interactive · <b>not the build</b></span>
+    <h1>darkwinter.ai Concepts</h1>
+    <p class="muted">Two directions for the new site, built at real scale so you can play with them. Both put the campaign line, "Who owns the future?", up front, and both make the mark itself the guide: each part of it leads to one of the four starting points and has its own sound. Turn sound on in either frame, then hover, click and drag the mark. The copy follows the site report. Anything that would need real AI or a backend is marked as scripted.</p>
+  </header>
+
+  <!-- ================= CONCEPT A ================= -->
+  <section aria-labelledby="ah">
+    <span class="label">Concept A</span>
+    <h2 id="ah" class="sec-h">The Signal: the mark is the front door</h2>
+    <div class="frame" id="A">
+      <div class="stage" id="A-stage" style="position:absolute;inset:0"></div>
+      <div class="scan"></div>
+      <svg class="leader" id="A-leader" aria-hidden="true"><line id="A-line" stroke="rgba(232,240,255,.5)" stroke-width="1" stroke-dasharray="3 4"/><circle id="A-dot" r="4" fill="none" stroke="#e8f0ff" stroke-width="1.2"/></svg>
+      <div class="ui">
+        <div class="topbar">
+          <div class="brand"><svg viewBox="-1.02 -1.08 2.04 2.04" aria-hidden="true"><path d="M0 -1 L-0.866 0.5 L0.866 0.5 Z M0 -0.83 L0.719 0.415 L-0.719 0.415 Z" fill="#e8f0ff" fill-rule="evenodd"/><circle r="0.399" fill="none" stroke="#e8f0ff" stroke-width="0.05"/><circle r="0.06" fill="#ff3b3b"/></svg>darkwinter.ai</div>
+          <span class="topmid passive">Transmission · Who owns the future</span>
+          <div class="topright"><button class="chipbtn" id="A-sound" aria-pressed="false">Sound: off</button><button class="cta" style="padding:10px 14px">Start a conversation</button></div>
+        </div>
+        <span class="corner c1 passive"></span><span class="corner c2 passive"></span><span class="corner c3 passive"></span><span class="corner c4 passive"></span>
+        <div class="readout passive" id="A-readout"></div>
+        <div class="hero">
+          <span class="eyebrow">// Campaign 01</span>
+          <h2 id="A-h"><span class="glitch">Who owns</span><br><span class="glitch">the future?</span></h2>
+          <p>Everyone deserves the power to build it. darkwinter helps founders, growing teams and mission-driven organizations put AI to work, from the first useful workflow to connected systems their people run.</p>
+          <div class="row"><button class="cta" id="A-start">Find your starting point</button><button class="ghost">Read the manifesto</button></div>
+        </div>
+        <div class="term passive" id="A-term" aria-live="polite"></div>
+        <div class="legend" id="A-legend" role="group" aria-label="Choose a starting point"></div>
+        <aside class="panel" id="A-panel" aria-live="polite"></aside>
+      </div>
+      <div class="callout" id="A-callout"></div>
+    </div>
+    <div class="notes">
+      <div class="note"><h3>The idea</h3><p>The mark is the homepage. It's a large, living, 3D instrument in a snowstorm, and its four parts are the four ways to start. Hover a part to hear it and read what it means. Click it, and the sonic logo plays as that path opens beside the mark.</p></div>
+      <div class="note"><h3>How it guides</h3><ul><li><b>Core</b> (the red beacon): Get started</li><li><b>Ring</b>: Build team capability</li><li><b>Frame</b>: Connect and automate</li><li><b>Lattice</b> (the hypercube): Your AI operating system</li></ul><p>The buttons along the bottom do the same thing, for keyboard, touch and screen readers.</p></div>
+      <div class="note"><h3>How it sounds</h3><ul><li>Core: the signal bell</li><li>Ring: a slow chord</li><li>Frame: a deep structural pulse</li><li>Lattice: a rising arpeggio, played note by note as you drag it through the fourth dimension</li><li>Selecting a part plays the sonic logo, A–C–E resolving to F</li></ul></div>
+      <div class="note"><h3>Below the fold</h3><p>The rest of the site scrolls normally: the path pages, the resources, the studio, the manifesto. Each one reuses the part's colour and sound as its accent, so the front door teaches you the map of the whole site.</p></div>
+    </div>
+  </section>
+
+  <!-- ================= CONCEPT B ================= -->
+  <section aria-labelledby="bh">
+    <span class="label">Concept B</span>
+    <h2 id="bh" class="sec-h">The Operator: a guide that talks you to your starting point</h2>
+    <div class="frame" id="B">
+      <div class="console">
+        <div class="chead"><span>Operator // darkwinter.os</span><span><b>●</b> Signal open</span></div>
+        <div class="log" id="B-log" aria-live="polite"></div>
+        <div>
+          <div class="chips" id="B-chips"></div>
+          <form id="B-form" hidden><label for="B-input" class="label" style="position:absolute;left:-9999px">One task you'd hand off tomorrow</label><input id="B-input" value="Turn customer feedback into a weekly improvement brief"><button class="cta" type="submit">Send</button></form>
+        </div>
+      </div>
+      <div class="stage" id="B-stage">
+        <div class="map" id="B-map" aria-hidden="true"></div>
+        <div class="brief" id="B-brief" aria-live="polite"></div>
+      </div>
+      <div class="scan"></div>
+    </div>
+    <div class="notes">
+      <div class="note"><h3>The idea</h3><p>A cyberpunk console that asks three plain questions and lights up the parts of the mark that match your answers. It ends with a starting brief: your path, three first steps, a free resource, and a conversation starter that's already filled in.</p></div>
+      <div class="note"><h3>Where the AI comes in</h3><p>This mockup is scripted. On the live site, the last step can use Claude to draft your brief from your own words, as a real demonstration of the work. It would be clearly labelled as AI, rate-limited, and would never store what you type without asking.</p></div>
+      <div class="note"><h3>Meeting people where they are</h3><p>Someone who has never used AI and a team preparing agents both get a useful answer in under a minute, with no sign-up. The brief is theirs to copy or download.</p></div>
+      <div class="note"><h3>Combined</h3><p>The two concepts fit together. Concept A is the front door, and the Operator opens when you press "Find your starting point" or select a part.</p></div>
+    </div>
+  </section>
+
+  <!-- ================= CAPABILITIES ================= -->
+  <section aria-labelledby="ch">
+    <span class="label">What powers it</span>
+    <h2 id="ch" class="sec-h">Skills and connectors for the next level</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Capability</th><th>What it does for the site</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><b>three.js</b> and the Signal engine</td><td>The 3D mark instrument, the snowstorm world, the part picking and the 4D rotation. It's what drives these mockups.</td><td><span class="pill ready">built</span></td></tr>
+        <tr><td><b>Tone.js</b> and the sound kit</td><td>A voice for each part, the sonic logo, ambient wind and drone. Opt-in only.</td><td><span class="pill ready">built</span></td></tr>
+        <tr><td><b>Claude API</b></td><td>A real AI step in the Operator that drafts a starting brief or a context brief from the visitor's words. It's the clearest proof of your AI capability, labelled and rate-limited.</td><td><span class="pill connect">needs an API key and a server function</span></td></tr>
+        <tr><td><b>Video pipeline</b> (HyperFrames and the canvas renderer)</td><td>Transmission films and short cuts for the studio, social posts and share cards.</td><td><span class="pill ready">built</span></td></tr>
+        <tr><td><b>Figma</b></td><td>Turns these mockups into editable Figma frames, so you can tweak layouts and copy visually, and we build from what you approve.</td><td><span class="pill connect">connector available</span></td></tr>
+        <tr><td><b>Higgsfield</b></td><td>AI image and video generation for the snowbound cyberpunk world (the operator, beacons, storm scenes). It can also turn images into 3D models.</td><td><span class="pill cost">connector available · uses credits</span></td></tr>
+        <tr><td><b>Vercel</b></td><td>Hosting, preview links for every iteration, and the server functions for inquiries and the Claude step.</td><td><span class="pill connect">connector available</span></td></tr>
+        <tr><td><b>Supabase</b></td><td>Stores inquiries, and later an opt-in, anonymous signal log, if you ever want a real constellation.</td><td><span class="pill cost">connector available · likely paid project</span></td></tr>
+        <tr><td><b>Notion</b></td><td>Could hold the resources and manifesto as editable content, so you can update copy without touching code.</td><td><span class="pill connect">connector available</span></td></tr>
+        <tr><td>Design-review skills</td><td>Accessibility review, design critique, UX copy, and your founder-voice profile for the manifesto and about copy.</td><td><span class="pill ready">available</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</main>
+
+<script type="module">
+  import { mountMark, PARTS, ORDER, soundOn, soundOff, sfx } from './concepts.js';
+  const $ = id => document.getElementById(id);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // glyph decode for the headline
+  const GLY = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#$%&*+=<>/';
+  function decode(el, text, ms = 900) { if (reduce) { el.textContent = text; return; } const t0 = performance.now(); const tick = now => { const p = (now - t0) / ms; el.textContent = [...text].map((c, i) => c === ' ' || p > i / text.length + .25 ? c : GLY[Math.random() * GLY.length | 0]).join(''); if (p < 1.3) requestAnimationFrame(tick); else el.textContent = text; }; requestAnimationFrame(tick); }
+
+  // sound toggles, shared by both frames
+  let sound = false; const toggles = [];
+  async function toggleSound() { sound = !sound; if (sound) await soundOn(); else soundOff(); toggles.forEach(b => { b.setAttribute('aria-pressed', sound); b.textContent = sound ? 'Sound: on' : 'Sound: off'; }); }
+
+  /* ================= Concept A ================= */
+  {
+    const A = $('A'), legend = $('A-legend'), call = $('A-callout'), line = $('A-line'), dot = $('A-dot'), panel = $('A-panel');
+    toggles.push($('A-sound')); $('A-sound').onclick = toggleSound;
+    let hovered = null, anchors = null;
+    const btns = ORDER.map(k => { const b = document.createElement('button'); b.className = 'chipbtn'; b.setAttribute('aria-pressed', 'false'); b.innerHTML = `<i style="background:${PARTS[k].color}"></i>${PARTS[k].n} ${PARTS[k].path}`;
+      b.onmouseenter = () => api.hover(k); b.onfocus = () => api.hover(k); b.onclick = () => api.select(k); legend.append(b); return b; });
+    const api = mountMark($('A-stage'), {
+      layout: asp => asp > 1.2 ? { x: .5, selX: -.5, y: -.06, scale: .86, selScale: .8 } : { x: 0, selX: 0, y: -.12, scale: .6, selScale: .5 },
+      onHover: p => { hovered = p; if (p) { const d = PARTS[p]; call.innerHTML = `<span class="k" style="color:${d.color}">${d.n} · ${d.name}</span><h4>${d.path}</h4><p>${d.line}</p><span class="go">Click to open this path →</span>`; } call.classList.toggle('on', !!p && !api.selected); },
+      onSelect: p => {
+        A.classList.toggle('sel', !!p); btns.forEach((b, i) => b.setAttribute('aria-pressed', ORDER[i] === p));
+        if (!p) { panel.classList.remove('on'); return; }
+        const d = PARTS[p]; call.classList.remove('on');
+        panel.innerHTML = `<button class="back" id="A-back">← Back to the mark</button><span class="k" style="color:${d.color}">${d.n} · ${d.name}</span><h3>${d.path}</h3><p class="muted">${d.line}</p>
+          <ul>${d.changes.map(c => `<li>${c}</li>`).join('')}</ul>
+          <div class="res"><span>Free resource · ${d.kind}</span><b>${d.resource}</b></div>
+          <div class="row"><button class="cta">Start a conversation</button><button class="ghost">See an example</button></div>`;
+        panel.classList.add('on'); $('A-back').onclick = () => { api.select(null); api.hover(null); };
+      },
+      onFrame: a => { anchors = a; const show = hovered && !api.selected && innerWidth > 820;
+        if (!show) { line.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); return; }
+        const [x, y] = a[hovered], W = A.clientWidth, cx = Math.min(W - 290, x + 120), cy = Math.max(70, Math.min(A.clientHeight - 170, y - 150));
+        call.style.left = cx + 'px'; call.style.top = cy + 'px';
+        line.setAttribute('x1', x); line.setAttribute('y1', y); line.setAttribute('x2', cx); line.setAttribute('y2', cy + 40); line.setAttribute('opacity', 1);
+        dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('opacity', 1); },
+    });
+    $('A-start').onclick = () => { btns[0].focus(); };
+    // headline decode, terminal and readouts
+    const h = $('A-h'); const spans = h.querySelectorAll('.glitch'); decode(spans[0], 'Who owns', 900); setTimeout(() => decode(spans[1], 'the future?', 1000), 250);
+    const term = $('A-term');
+    (async () => { for (const l of ['> darkwinter.os // cold boot', '> storm index ......... 0.82', '> signal .............. acquired', '> select a part of the mark to begin_']) { const d = document.createElement('div'); d.className = l.includes('select') ? '' : 'dim'; term.append(d);
+      for (let i = 0; i <= l.length; i++) { d.textContent = l.slice(0, i); if (!reduce) await sleep(16); } await sleep(220); } })();
+    const ro = $('A-readout'); let tt = 0; setInterval(() => { tt++; ro.innerHTML = `LAT 41.8781 N · LON 87.6298 W<br>TEMP −${(18 + Math.sin(tt / 9) * 2).toFixed(1)}°C · WIND ${(32 + Math.sin(tt / 5) * 6).toFixed(0)} KM/H<br>STORM INDEX ${(0.82 + Math.sin(tt / 7) * .03).toFixed(2)} · <b>SIGNAL OPEN</b>`; }, 400);
+  }
+
+  /* ================= Concept B ================= */
+  {
+    const log = $('B-log'), chips = $('B-chips'), form = $('B-form'), map = $('B-map'), brief = $('B-brief');
+    ORDER.forEach(k => { const s = document.createElement('span'); s.dataset.k = k; s.textContent = `${PARTS[k].n} ${PARTS[k].name}`; s.style.color = 'var(--muted)'; map.append(s); });
+    const lit = k => map.querySelectorAll('span').forEach(s => { const on = s.dataset.k === k; s.classList.toggle('lit', on); s.style.color = on ? PARTS[k].color : 'var(--muted)'; });
+    const api = mountMark($('B-stage'), { snow: 700, layout: asp => ({ x: 0, y: asp > .9 ? .05 : .12, scale: asp > .9 ? .82 : .62, selScale: 1 }), onHover: p => p && lit(p), onSelect: p => p && lit(p) });
+    const say = async (html, who = 'Operator', cls = '') => { const m = document.createElement('div'); m.className = 'msg ' + cls; m.innerHTML = `<span class="who">${who}</span><div class="txt"></div>`; log.append(m);
+      const t = m.querySelector('.txt'); if (cls === 'you' || reduce) t.innerHTML = html; else { const tmp = document.createElement('div'); tmp.innerHTML = html; const text = tmp.textContent; for (let i = 0; i <= text.length; i += 2) { t.textContent = text.slice(0, i); await sleep(12); } t.innerHTML = html; }
+      log.scrollTop = log.scrollHeight; sfx.tick(); };
+    const ask = (opts) => new Promise(res => { chips.innerHTML = ''; opts.forEach(([label, val]) => { const b = document.createElement('button'); b.className = 'chipbtn'; b.textContent = label; b.onclick = () => { chips.innerHTML = ''; res([label, val]); }; chips.append(b); }); });
+    let answers = {};
+    async function run() {
+      log.innerHTML = ''; brief.classList.remove('on'); api.select(null); api.hover(null);
+      await say('<span class="big">Who owns the future?</span>', 'darkwinter.os');
+      await say("You do. Let's find where you start. Three quick questions, no sign-up.");
+      await say("What's pulling at you most right now?");
+      const [l1, p] = await ask([["I don't know where to start with AI", 'core'], ['My team uses AI, but inconsistently', 'ring'], ['Too much manual handoff work', 'frame'], ['I want AI connected across the business', 'lattice']]);
+      await say(l1, 'You', 'you'); api.hover(p); answers.p = p;
+      await say(`That maps to <b style="color:${PARTS[p].color}">${PARTS[p].name}</b>: ${PARTS[p].path.toLowerCase()}. How big is the team?`);
+      const [l2] = await ask([['Just me', 1], ['2–10', 2], ['11–50', 3], ['51–250', 4]]);
+      await say(l2, 'You', 'you');
+      await say("Last one. What's one task you'd hand off tomorrow if you could?");
+      form.hidden = false; $('B-input').focus({ preventScroll: true });
+      const task = await new Promise(res => { form.onsubmit = e => { e.preventDefault(); form.hidden = true; res($('B-input').value.trim() || 'a recurring task'); }; });
+      await say(task, 'You', 'you');
+      await say('Compiling your starting signal…<div class="progress" style="margin-top:8px"><i id="B-bar"></i></div>');
+      await sleep(30); $('B-bar').style.width = '100%'; await sleep(1150);
+      api.select(p); const d = PARTS[p];
+      brief.innerHTML = `<span class="k" style="color:${d.color}">Your starting signal · ${d.n} ${d.name}</span><h4>${d.path}</h4>
+        <ol><li>Write a one-page context brief for “${task}”</li><li>${d.changes[0]}</li><li>Review the first result with one teammate before repeating it</li></ol>
+        <div style="display:flex;flex-wrap:wrap;gap:8px"><button class="cta">Start a conversation (pre-filled)</button><button class="ghost">Get the ${d.resource.toLowerCase()} ${d.kind.toLowerCase()}</button><button class="ghost" id="B-again">Start over</button></div>
+        <span class="note">Scripted mockup. On the live site, this brief could be drafted by Claude from your words, clearly labelled as AI.</span>`;
+      brief.classList.add('on'); $('B-again').onclick = run;
+      await say(`Done. Your brief is on the right. ${team(l2)}`);
+    }
+    const team = l => ({ 'Just me': 'Solo founders usually start with a single prompt they reuse every week.', '2–10': 'At your size, one shared practice beats ten private experiments.', '11–50': 'This is where a shared working agreement starts paying off.', '51–250': 'At this size, ownership and permissions come first.' })[l] || '';
+    // start when the frame is first seen
+    new IntersectionObserver(([en], o) => { if (en.isIntersecting) { o.disconnect(); run(); } }, { threshold: .35 }).observe($('B'));
+  }
+</script>
