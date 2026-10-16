@@ -9,15 +9,17 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
-/* ---------- the four parts, the four starting points ---------- */
+/* ---------- the four parts, the four starting points ----------
+   The parts are deliberately unnamed on screen: they are shown only by number, colour and the section they open.
+   The keys below are code identifiers, not labels. */
 export const PARTS = {
-  core: { n: '01', name: 'The Core', path: 'Get started with AI', line: 'Find one useful first task. Build the context and confidence to do it well.', color: '#ff3b3b',
+  core: { n: '01', short: 'Get started', path: 'Get started with AI', line: 'Find one useful first task. Build the context and confidence to do it well.', color: '#ff3b3b',
     changes: ['Pick one recurring task worth improving', 'Capture your business context once, reuse it everywhere', 'Get a reviewed, useful result your team can see'], resource: 'Find your first use case', kind: 'Prompt' },
-  ring: { n: '02', name: 'The Ring', path: 'Build team capability', line: 'Shared practices, reusable prompts, and clear ownership of quality.', color: '#b04dff',
+  ring: { n: '02', short: 'Team capability', path: 'Build team capability', line: 'Shared practices, reusable prompts, and clear ownership of quality.', color: '#b04dff',
     changes: ['Shared prompts and practices the team owns', 'Clear review and ownership for AI output', 'A working agreement for how AI is used'], resource: 'Team AI working agreement', kind: 'Template' },
-  frame: { n: '03', name: 'The Frame', path: 'Connect and automate work', line: 'Map the recurring work, connect the tools, and add review gates.', color: '#2f7bff',
+  frame: { n: '03', short: 'Connect and automate', path: 'Connect and automate work', line: 'Map the recurring work, connect the tools, and add review gates.', color: '#2f7bff',
     changes: ['A map of the recurring work and its handoffs', 'A focused pilot with a human review gate', 'Connected tools and fewer manual steps'], resource: 'Workflow map', kind: 'Template' },
-  lattice: { n: '04', name: 'The Lattice', path: 'Build your AI operating system', line: 'Context, tools, workflows, permissions and selected agents, connected.', color: '#00d4ff',
+  lattice: { n: '04', short: 'AI operating system', path: 'Build your AI operating system', line: 'Context, tools, workflows, permissions and selected agents, connected.', color: '#00d4ff',
     changes: ['Shared context across tools and teams', 'Permissions and review built in from day one', 'Selected agents where they earn their place'], resource: 'Pilot scorecard', kind: 'Template' },
 };
 export const ORDER = ['core', 'ring', 'frame', 'lattice'];
