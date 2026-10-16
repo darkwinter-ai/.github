@@ -8,7 +8,6 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-import * as Tone from 'tone';
 
 /* ---------- the four parts, the four starting points ---------- */
 export const PARTS = {
@@ -23,48 +22,23 @@ export const PARTS = {
 };
 export const ORDER = ['core', 'ring', 'frame', 'lattice'];
 
-/* ---------- sound: off until the visitor turns it on ---------- */
-let S = null;
+/* ---------- sound: the Mark Lab voices (darkwinter-signal/src/sound.js, Synthwave kit), off until the visitor turns it on ---------- */
+import { makeKit, attach } from '../../darkwinter-signal/src/sound.js';
+let RAW = null, kit = null; const last = {};
 export async function soundOn() {
   try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}
-  const raw = Tone.getContext().rawContext; raw.resume();
-  await Tone.start(); Tone.Destination.volume.value = -6;
-  if (S) { S.out.gain.rampTo(.8, .3); return true; }
-  const out = new Tone.Gain(0).toDestination(); out.gain.rampTo(.8, .6);
-  const rev = new Tone.Reverb({ decay: 5.5, wet: .38 }).connect(out);
-  const dly = new Tone.PingPongDelay(.375, .32); dly.wet.value = .28; dly.connect(rev);
-  const bell = new Tone.PolySynth(Tone.FMSynth, { harmonicity: 3.5, modulationIndex: 1.4, envelope: { attack: .006, decay: 2.2, sustain: 0, release: 1.6 }, modulationEnvelope: { attack: .002, decay: .2, sustain: 0, release: .2 }, volume: -12 }).connect(rev);
-  const padF = new Tone.Filter(1100, 'lowpass').connect(rev);
-  const pad = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'fatsawtooth', count: 3, spread: 22 }, envelope: { attack: .7, decay: .6, sustain: .7, release: 2.6 }, volume: -24 }).connect(padF);
-  const bass = new Tone.MonoSynth({ oscillator: { type: 'sawtooth' }, filter: { Q: 3, type: 'lowpass' }, envelope: { attack: .01, decay: .5, sustain: 0, release: .4 },
-    filterEnvelope: { attack: .005, decay: .35, sustain: 0, baseFrequency: 70, octaves: 3.2 }, volume: -12 }).connect(rev);
-  const arpF = new Tone.Filter(2600, 'lowpass').connect(dly);
-  const arp = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'square' }, envelope: { attack: .004, decay: .14, sustain: 0, release: .1 }, volume: -22 }).connect(arpF);
-  const drone = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 3, decay: 1, sustain: 1, release: 3 }, volume: -32 }).connect(padF);
-  const windF = new Tone.Filter(600, 'bandpass').connect(out); windF.Q.value = 1.4; new Tone.LFO(.07, 300, 1300).connect(windF.frequency).start();
-  const wind = new Tone.Noise({ type: 'pink', volume: -40 }).connect(windF); wind.start(); drone.triggerAttack(['D2', 'A2'], Tone.now() + .1);
-  S = { out, bell, pad, bass, arp, last: {} };
+  RAW ??= new (window.AudioContext || window.webkitAudioContext)(); RAW.resume();
+  await attach(RAW);
+  if (!kit) { kit = makeKit('01'); await kit.ready; kit.start(); kit.build(); }
   return true;
 }
-export function soundOff() { S?.out.gain.rampTo(0, .4); }
-const SCALE = ['D5', 'F5', 'A5', 'C6', 'E6', 'F6', 'A6'];
+export function soundOff() { kit?.stop(); kit = null; }
+const ok = (key, gap) => { const t = performance.now() / 1000; if (!kit || (last[key] && t - last[key] < gap)) return false; last[key] = t; return true; };
 export const sfx = {
-  hover(part) {
-    if (!S || S.out.gain.value < .05) return; const t = Tone.now() + .02;
-    if (S.last[part] && t - S.last[part] < .7) return; S.last[part] = t;
-    if (part === 'core') S.bell.triggerAttackRelease('A5', 1.2, t, .5);
-    if (part === 'ring') S.pad.triggerAttackRelease(['D3', 'F3', 'A3', 'C4', 'E4'], 1.4, t, .55);
-    if (part === 'frame') { S.bass.triggerAttackRelease('D1', '8n', t, .8); S.bell.triggerAttackRelease('D4', .8, t + .02, .2); }
-    if (part === 'lattice') ['D5', 'F5', 'A5', 'C6', 'E6'].forEach((n, i) => S.arp.triggerAttackRelease(n, .08, t + i * .07, .6));
-  },
-  // the sonic logo: A–C–E, then the resolve up to F as the path locks in
-  select() {
-    if (!S || S.out.gain.value < .05) return; const t = Tone.now() + .03;
-    [['A5', 0], ['C6', .2], ['E6', .4]].forEach(([n, o]) => S.bell.triggerAttackRelease(n, .9, t + o, .55));
-    S.bell.triggerAttackRelease('F6', 2.4, t + .8, .8); S.pad.triggerAttackRelease(['F3', 'A3', 'C4', 'E4', 'G4'], 2.4, t + .8, .5); S.bass.triggerAttackRelease('F1', '4n', t + .8, .5);
-  },
-  step(i) { if (!S || S.out.gain.value < .05) return; const t = Tone.now(); if (S.last.step && t - S.last.step < .08) return; S.last.step = t; S.arp.triggerAttackRelease(SCALE[((i % 7) + 7) % 7], .07, t + .01, .45); },
-  tick() { if (!S || S.out.gain.value < .05) return; S.arp.triggerAttackRelease('A6', .02, Tone.now() + .01, .12); },
+  hover(part) { if (ok(part, .7)) kit.part(part); },
+  select() { if (ok('select', .4)) kit.logo(); },     // the sonic logo as a path opens
+  step(i) { if (kit) kit.note(i); },                   // turning the lattice plays the scale
+  tick() { if (ok('tick', .12)) kit.ui('tap'); },
 };
 
 /* ---------- the mark ---------- */
@@ -89,15 +63,15 @@ export function mountMark(host, opts = {}) {
   const scene = new THREE.Scene(); scene.background = new THREE.Color('#040810'); scene.fog = new THREE.Fog('#040810', 3.6, 9);
   const camera = new THREE.PerspectiveCamera(32, 1, .1, 40);
   const composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .62, .45, .28); composer.addPass(bloom); composer.addPass(new OutputPass());
+  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .5, .45, .3); composer.addPass(bloom); composer.addPass(new OutputPass());
 
   // world: a faint cyan floor grid and falling snow
-  if (opts.grid !== false) { const g = new THREE.GridHelper(16, 48, '#00d4ff', '#00d4ff'); g.position.y = -1.05; g.material.transparent = true; g.material.opacity = .18; scene.add(g); }
+  if (opts.grid !== false) { const g = new THREE.GridHelper(16, 48, '#00d4ff', '#00d4ff'); g.position.y = -1.05; g.material.transparent = true; g.material.opacity = .07; scene.add(g); }
   const flakeC = document.createElement('canvas'); flakeC.width = flakeC.height = 32; { const x = flakeC.getContext('2d'), gr = x.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 32, 32); }
-  const NS = opts.snow ?? 1400, snowPos = new Float32Array(NS * 3), snowV = new Float32Array(NS);
+  const NS = opts.snow ?? 900, snowPos = new Float32Array(NS * 3), snowV = new Float32Array(NS);
   for (let i = 0; i < NS; i++) { snowPos[i * 3] = (Math.random() - .5) * 9; snowPos[i * 3 + 1] = (Math.random() - .5) * 5; snowPos[i * 3 + 2] = (Math.random() - .5) * 6 - 1; snowV[i] = .15 + Math.random() * .35; }
   const snowG = new THREE.BufferGeometry(); snowG.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
-  scene.add(new THREE.Points(snowG, new THREE.PointsMaterial({ size: .03, map: new THREE.CanvasTexture(flakeC), transparent: true, depthWrite: false, color: '#cfe0ff', opacity: .75 })));
+  scene.add(new THREE.Points(snowG, new THREE.PointsMaterial({ size: .03, map: new THREE.CanvasTexture(flakeC), transparent: true, depthWrite: false, color: '#cfe0ff', opacity: .45 })));
 
   const root = new THREE.Group(), mark = new THREE.Group(); root.add(mark); scene.add(root);
   const shape = new THREE.Shape(triPts(1).map(p => new THREE.Vector2(...p))); shape.holes.push(new THREE.Path(triPts(1 - 2 * G.T).reverse().map(p => new THREE.Vector2(...p))));
@@ -160,21 +134,21 @@ export function mountMark(host, opts = {}) {
     camera.position.set(0, .05, 3.6); camera.lookAt(0, 0, 0);
     // build-in and the 4D turn
     const lt = reduce ? 9 : t - state.build0;
-    frame.scale.setScalar(outBack(clamp(lt / .6))); ring.scale.setScalar(outBack(clamp((lt - .35) / .5)));
-    if (!state.drag && !reduce) state.ta += dt * (focus === 'lattice' ? .9 : .3);
+    frame.scale.setScalar(outBack(clamp((lt - .4) / 1.1))); ring.scale.setScalar(outBack(clamp((lt - 1.2) / .9)));
+    if (!state.drag && !reduce) state.ta += dt * (focus === 'lattice' ? .45 : .16);
     state.a += (state.ta - state.a) * (1 - Math.exp(-dt * 5)); state.b += (state.tb - state.b) * (1 - Math.exp(-dt * 5));
     const step = Math.floor(state.a / (Math.PI / 6)); if (state.step !== null && step !== state.step && state.drag) sfx.step(step); state.step = step;
     // the second 4D angle stays small so the perspective never blows up
-    const unfold = clamp((lt - .7) / .9), P = project(state.a, clamp(.3 * Math.sin(state.a * .37) + state.b * .25, -.38, .38));
+    const unfold = clamp((lt - 1.9) / 1.4), P = project(state.a, clamp(.3 * Math.sin(state.a * .37) + state.b * .25, -.38, .38));
     for (let i = 0; i < E4.length; i++) { const [p, q] = E4[i]; tessPos.set([...P[p].map(x => x * unfold), ...P[q].map(x => x * unfold)], i * 6); }
     tessGeo.setPositions(tessPos); P.forEach((p, i) => { m4.makeTranslation(p[0] * unfold, p[1] * unfold, p[2] * unfold); nodes.setMatrixAt(i, m4); }); nodes.instanceMatrix.needsUpdate = true;
     // emphasis: the focused part brightens, the others recede
-    const k = (part, c) => c.copy(base[part]).multiplyScalar(!focus ? 1 : focus === part ? 1.4 : .32);
+    const k = (part, c) => c.copy(base[part]).multiplyScalar(!focus ? 1 : focus === part ? 1.25 : .55);
     k('frame', frame.material.color); k('ring', ring.material.color); k('lattice', tessMat.color); k('core', core.material.color);
-    const rp = t - state.ripple, pulse = 1 + Math.sin(t * 3) * .08 + (focus === 'core' ? .5 : 0) + (rp < 1.2 ? (1 - rp / 1.2) * 1.6 : 0);
-    core.scale.setScalar(clamp((lt - 1.3) / .4) * 1.2 * pulse); halo.scale.setScalar(.35 * pulse * (focus && focus !== 'core' ? .5 : 1));
+    const rp = t - state.ripple, pulse = 1 + Math.sin(t * 1.4) * .06 + (focus === 'core' ? .25 : 0) + (rp < 1.6 ? (1 - rp / 1.6) * .7 : 0);
+    core.scale.setScalar(clamp((lt - 3.1) / .6) * 1.2 * pulse); halo.scale.setScalar(.35 * pulse * (focus && focus !== 'core' ? .5 : 1));
     mark.rotation.set(Math.sin(t * .5) * (reduce ? 0 : .08), Math.sin(t * .37) * (reduce ? 0 : .22) + (state.drag ? 0 : 0), 0);
-    bloom.strength = .62 + (rp < 1.2 ? (1 - rp / 1.2) * .6 : 0);
+    bloom.strength = .5 + (rp < 1.6 ? (1 - rp / 1.6) * .25 : 0);
     // snow
     if (!reduce) { for (let i = 0; i < NS; i++) { snowPos[i * 3 + 1] -= snowV[i] * dt; snowPos[i * 3] += Math.sin(t * .4 + i) * .002 + dt * .05; if (snowPos[i * 3 + 1] < -2.5) { snowPos[i * 3 + 1] = 2.5; snowPos[i * 3] = (Math.random() - .5) * 9; } } snowG.attributes.position.needsUpdate = true; }
     composer.render();

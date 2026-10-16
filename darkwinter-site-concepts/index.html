@@ -28,7 +28,7 @@
 
   /* ===== mockup frame shared ===== */
   .frame { position: relative; width: 100%; aspect-ratio: 16 / 9; min-height: 560px; border-radius: 16px; overflow: hidden; background: var(--deep); border: 1px solid var(--line); isolation: isolate; }
-  .frame .scan { position: absolute; inset: 0; pointer-events: none; z-index: 5; background: repeating-linear-gradient(180deg, rgba(255,255,255,0) 0 2px, rgba(0,0,0,.18) 2px 3px), radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.6)); }
+  .frame .scan { position: absolute; inset: 0; pointer-events: none; z-index: 5; background: repeating-linear-gradient(180deg, rgba(255,255,255,0) 0 2px, rgba(0,0,0,.1) 2px 3px), radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,.7)); }
   .mono { font-family: var(--mono); }
   .chipbtn { font: 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; background: rgba(4,8,16,.55); border: 1px solid rgba(232,240,255,.22); color: var(--text); border-radius: 999px; padding: 10px 14px; cursor: pointer; backdrop-filter: blur(6px); }
   .chipbtn:hover { border-color: var(--text); }
@@ -48,24 +48,24 @@
   .c1 { top: 64px; left: 18px; border-width: 1px 0 0 1px; } .c2 { top: 64px; right: 18px; border-width: 1px 1px 0 0; } .c3 { bottom: 18px; left: 18px; border-width: 0 0 1px 1px; } .c4 { bottom: 18px; right: 18px; border-width: 0 1px 1px 0; }
   .readout { position: absolute; top: 70px; right: 28px; font: 11px/1.7 var(--mono); color: var(--muted); text-align: right; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
   .readout b { color: var(--beacon); font-weight: 400; }
-  .hero { position: absolute; left: clamp(20px, 4vw, 56px); top: 50%; transform: translateY(-56%); width: min(44%, 520px); display: grid; gap: 18px; }
+  .hero { position: absolute; left: clamp(20px, 4vw, 56px); top: 50%; transform: translateY(-56%); width: min(44%, 520px); display: grid; gap: 18px; opacity: 0; animation: reveal 1.6s 3.6s forwards; }
   .hero .eyebrow { font: 11px var(--mono); letter-spacing: .18em; color: var(--beacon); text-transform: uppercase; }
   .hero h2 { font: 700 clamp(34px, 5.4vw, 72px)/.94 var(--sans); letter-spacing: -.02em; text-transform: uppercase; }
   .hero h2 .glitch { color: var(--text); text-shadow: 2px 0 rgba(255,59,59,.65), -2px 0 rgba(0,212,255,.6); }
   .hero p { color: #c3cee2; font-size: clamp(14px, 1.25vw, 17px); max-width: 44ch; }
   .hero .row { display: flex; flex-wrap: wrap; gap: 10px; }
-  .term { position: absolute; left: clamp(20px, 4vw, 56px); bottom: 26px; font: 12px/1.75 var(--mono); color: #7fe8ff; letter-spacing: .03em; min-height: 84px; }
+  .term { position: absolute; left: clamp(20px, 4vw, 56px); bottom: 26px; font: 11.5px/1.75 var(--mono); color: rgba(127,232,255,.75); letter-spacing: .06em; opacity: 0; animation: reveal 1s 5.6s forwards; }
+  @media (prefers-reduced-motion: reduce) { .hero, .legend, .term { animation: none; opacity: 1; } }
   .term .dim { color: var(--muted); }
-  .legend { position: absolute; right: 26px; bottom: 24px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; max-width: 60%; }
-  .legend .chipbtn i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: 0; }
-  .legend .chipbtn[aria-pressed="true"] { border-color: var(--text); background: rgba(232,240,255,.1); }
-  svg.leader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 6; pointer-events: none; overflow: visible; }
-  .callout { box-sizing: border-box; position: absolute; z-index: 7; width: 270px; padding: 14px 16px; background: rgba(7,9,15,.82); border: 1px solid rgba(232,240,255,.18); border-radius: 12px; backdrop-filter: blur(8px); display: grid; gap: 6px; pointer-events: none; opacity: 0; transition: opacity .2s; }
-  .callout.on { opacity: 1; }
-  .callout .k { font: 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
-  .callout h4 { margin: 0; font: 500 18px/1.2 var(--sans); }
-  .callout p { font-size: 13.5px; color: var(--muted); }
-  .callout .go { font: 11px var(--mono); color: var(--text); letter-spacing: .1em; text-transform: uppercase; }
+  /* restraint: the mark arrives alone; words follow it */
+  .legend { position: absolute; right: 30px; bottom: 26px; display: grid; gap: 2px; justify-items: end; opacity: 0; animation: reveal 1.4s 5.2s forwards; }
+  .legend .idx-h { font: 10.5px var(--mono); letter-spacing: .2em; text-transform: uppercase; color: rgba(165,179,201,.55); margin-bottom: 4px; }
+  .legend .idx { font: 12px/1.9 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: none; border: 0; padding: 0 2px; cursor: pointer; text-align: right; }
+  .legend .idx:hover, .legend .idx[aria-pressed="true"], .legend .idx.hot { color: var(--text); }
+  .legend .idx i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-left: 10px; vertical-align: 2px; opacity: .8; }
+  .whisper { position: absolute; left: 0; right: 0; bottom: 30px; text-align: center; font: 12px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--text); opacity: 0; transition: opacity .5s; }
+  .whisper.on { opacity: .85; } .whisper span { color: var(--muted); }
+  @keyframes reveal { to { opacity: 1; } }
   .panel { position: absolute; z-index: 8; top: 70px; right: 22px; bottom: 22px; width: min(400px, 40%); background: rgba(7,9,15,.9); border: 1px solid rgba(232,240,255,.16); border-radius: 16px; padding: 22px; display: grid; gap: 14px; align-content: start; overflow-y: auto; transform: translateX(110%); transition: transform .5s cubic-bezier(.2,.8,.2,1); backdrop-filter: blur(10px); }
   .panel.on { transform: none; }
   .panel .k { font: 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
@@ -75,8 +75,9 @@
   .panel .res span { font: 11px var(--mono); color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
   .panel .row { display: flex; flex-wrap: wrap; gap: 8px; }
   .back { font: 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0; justify-self: start; }
-  #A.sel .hero, #A.sel .term { opacity: 0; pointer-events: none; transition: opacity .3s; }
-  #A .hero, #A .term { transition: opacity .3s; }
+  /* the reveal animation's fill holds opacity, so selection hides the copy with a filter and visibility instead */
+  #A.sel .hero, #A.sel .term { visibility: hidden; filter: opacity(0); pointer-events: none; transition: filter .3s, visibility 0s .3s; }
+  #A .hero, #A .term { transition: filter .3s; }
 
   /* ===== Concept B: The Operator ===== */
   #B { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
@@ -122,10 +123,10 @@
     .hero { top: 92px; transform: none; width: auto; right: 20px; gap: 12px; }
     .hero h2 { font-size: 40px; } .hero p { font-size: 14px; } .hero .row { display: none; }
     .topright .cta { display: none; } .topbar { padding: 14px 16px; }
-    .readout, .topmid, .term { display: none; }
-    .legend { left: 16px; right: 16px; max-width: none; justify-content: center; }
+    .term { display: none; }
+    .legend { left: 16px; right: 16px; justify-items: center; }
+    .whisper { bottom: 150px; }
     .panel { top: auto; left: 12px; right: 12px; bottom: 12px; width: auto; max-height: 64%; transform: translateY(110%); }
-    .callout { display: none; }
     #B { grid-template-columns: 1fr; grid-template-rows: 1fr 300px; height: 860px; }
     #B .console { border-right: 0; border-bottom: 1px solid var(--line); }
   }
@@ -135,7 +136,7 @@
   <header>
     <span class="label">Mockups for review · live and interactive · <b>not the build</b></span>
     <h1>darkwinter.ai Concepts</h1>
-    <p class="muted">Two directions for the new site, built at real scale so you can play with them. Both put the campaign line, "Who owns the future?", up front, and both make the mark itself the guide: each part of it leads to one of the four starting points and has its own sound. Turn sound on in either frame, then hover, click and drag the mark. The copy follows the site report. Anything that would need real AI or a backend is marked as scripted.</p>
+    <p class="muted">Two directions for the new site, built at real scale so you can play with them. Both put the campaign line, "Who owns the future?", up front, and both make the mark itself the guide: each part of it leads to one of the four starting points and has its own sound. Give Concept A a few seconds: it starts with the mark alone. Turn sound on in either frame, then hover, click and drag the mark. The copy follows the site report. Anything that would need real AI or a backend is marked as scripted.</p>
   </header>
 
   <!-- ================= CONCEPT A ================= -->
@@ -145,15 +146,11 @@
     <div class="frame" id="A">
       <div class="stage" id="A-stage" style="position:absolute;inset:0"></div>
       <div class="scan"></div>
-      <svg class="leader" id="A-leader" aria-hidden="true"><line id="A-line" stroke="rgba(232,240,255,.5)" stroke-width="1" stroke-dasharray="3 4"/><circle id="A-dot" r="4" fill="none" stroke="#e8f0ff" stroke-width="1.2"/></svg>
       <div class="ui">
         <div class="topbar">
           <div class="brand"><svg viewBox="-1.02 -1.08 2.04 2.04" aria-hidden="true"><path d="M0 -1 L-0.866 0.5 L0.866 0.5 Z M0 -0.83 L0.719 0.415 L-0.719 0.415 Z" fill="#e8f0ff" fill-rule="evenodd"/><circle r="0.399" fill="none" stroke="#e8f0ff" stroke-width="0.05"/><circle r="0.06" fill="#ff3b3b"/></svg>darkwinter.ai</div>
-          <span class="topmid passive">Transmission · Who owns the future</span>
           <div class="topright"><button class="chipbtn" id="A-sound" aria-pressed="false">Sound: off</button><button class="cta" style="padding:10px 14px">Start a conversation</button></div>
         </div>
-        <span class="corner c1 passive"></span><span class="corner c2 passive"></span><span class="corner c3 passive"></span><span class="corner c4 passive"></span>
-        <div class="readout passive" id="A-readout"></div>
         <div class="hero">
           <span class="eyebrow">// Campaign 01</span>
           <h2 id="A-h"><span class="glitch">Who owns</span><br><span class="glitch">the future?</span></h2>
@@ -161,15 +158,15 @@
           <div class="row"><button class="cta" id="A-start">Find your starting point</button><button class="ghost">Read the manifesto</button></div>
         </div>
         <div class="term passive" id="A-term" aria-live="polite"></div>
-        <div class="legend" id="A-legend" role="group" aria-label="Choose a starting point"></div>
+        <div class="whisper passive" id="A-whisper" aria-live="polite"></div>
+        <div class="legend" id="A-legend" role="group" aria-label="Four ways in"><span class="idx-h">Four ways in</span></div>
         <aside class="panel" id="A-panel" aria-live="polite"></aside>
       </div>
-      <div class="callout" id="A-callout"></div>
     </div>
     <div class="notes">
-      <div class="note"><h3>The idea</h3><p>The mark is the homepage. It's a large, living, 3D instrument in a snowstorm, and its four parts are the four ways to start. Hover a part to hear it and read what it means. Click it, and the sonic logo plays as that path opens beside the mark.</p></div>
+      <div class="note"><h3>The idea</h3><p>The mark is the homepage. It assembles itself alone in the dark and snow, and only then do the words arrive. Its four parts are the four ways in. They're named but not explained until a visitor chooses one, so the mark keeps its mystery. Choosing a part plays the sonic logo and opens that path beside it.</p></div>
       <div class="note"><h3>How it guides</h3><ul><li><b>Core</b> (the red beacon): Get started</li><li><b>Ring</b>: Build team capability</li><li><b>Frame</b>: Connect and automate</li><li><b>Lattice</b> (the hypercube): Your AI operating system</li></ul><p>The buttons along the bottom do the same thing, for keyboard, touch and screen readers.</p></div>
-      <div class="note"><h3>How it sounds</h3><ul><li>Core: the signal bell</li><li>Ring: a slow chord</li><li>Frame: a deep structural pulse</li><li>Lattice: a rising arpeggio, played note by note as you drag it through the fourth dimension</li><li>Selecting a part plays the sonic logo, A–C–E resolving to F</li></ul></div>
+      <div class="note"><h3>How it sounds</h3><p>These are the Mark Lab voices: the Synthwave kit's saw arpeggio through a ping-pong delay, a riser, a drone and the bell. Turning sound on plays the build.</p><ul><li>Core: the bell</li><li>Ring: the pad chord</li><li>Frame: the ignition kick under a low chord</li><li>Lattice: the scale run, and one note at a time as you drag it</li><li>Choosing a part plays the sonic logo</li></ul></div>
       <div class="note"><h3>Below the fold</h3><p>The rest of the site scrolls normally: the path pages, the resources, the studio, the manifesto. Each one reuses the part's colour and sound as its accent, so the front door teaches you the map of the whole site.</p></div>
     </div>
   </section>
@@ -239,38 +236,32 @@
 
   /* ================= Concept A ================= */
   {
-    const A = $('A'), legend = $('A-legend'), call = $('A-callout'), line = $('A-line'), dot = $('A-dot'), panel = $('A-panel');
+    const A = $('A'), legend = $('A-legend'), whisper = $('A-whisper'), panel = $('A-panel');
     toggles.push($('A-sound')); $('A-sound').onclick = toggleSound;
-    let hovered = null, anchors = null;
-    const btns = ORDER.map(k => { const b = document.createElement('button'); b.className = 'chipbtn'; b.setAttribute('aria-pressed', 'false'); b.innerHTML = `<i style="background:${PARTS[k].color}"></i>${PARTS[k].n} ${PARTS[k].path}`;
-      b.onmouseenter = () => api.hover(k); b.onfocus = () => api.hover(k); b.onclick = () => api.select(k); legend.append(b); return b; });
+    // the index is plain text: the parts are named, never explained, until a visitor chooses one
+    const btns = ORDER.map(k => { const b = document.createElement('button'); b.className = 'idx'; b.setAttribute('aria-pressed', 'false'); b.innerHTML = `${PARTS[k].n} ${PARTS[k].name}<i style="background:${PARTS[k].color}"></i>`;
+      b.setAttribute('aria-label', `${PARTS[k].name}: ${PARTS[k].path}`);
+      b.onmouseenter = () => api.hover(k); b.onmouseleave = () => !api.selected && api.hover(null); b.onfocus = () => api.hover(k); b.onclick = () => api.select(k); legend.append(b); return b; });
     const api = mountMark($('A-stage'), {
-      layout: asp => asp > 1.2 ? { x: .5, selX: -.5, y: -.06, scale: .86, selScale: .8 } : { x: 0, selX: 0, y: -.12, scale: .6, selScale: .5 },
-      onHover: p => { hovered = p; if (p) { const d = PARTS[p]; call.innerHTML = `<span class="k" style="color:${d.color}">${d.n} · ${d.name}</span><h4>${d.path}</h4><p>${d.line}</p><span class="go">Click to open this path →</span>`; } call.classList.toggle('on', !!p && !api.selected); },
+      layout: asp => asp > 1.2 ? { x: .5, selX: -.5, y: -.04, scale: .8, selScale: .76 } : { x: 0, selX: 0, y: -.3, scale: .5, selScale: .46 },
+      onHover: p => { btns.forEach((b, i) => b.classList.toggle('hot', ORDER[i] === p));
+        if (p && !api.selected) whisper.innerHTML = `${PARTS[p].n} · ${PARTS[p].name} <span>· ${PARTS[p].path}</span>`;
+        whisper.classList.toggle('on', !!p && !api.selected); },
       onSelect: p => {
-        A.classList.toggle('sel', !!p); btns.forEach((b, i) => b.setAttribute('aria-pressed', ORDER[i] === p));
+        A.classList.toggle('sel', !!p); btns.forEach((b, i) => b.setAttribute('aria-pressed', ORDER[i] === p)); whisper.classList.remove('on');
         if (!p) { panel.classList.remove('on'); return; }
-        const d = PARTS[p]; call.classList.remove('on');
+        const d = PARTS[p];
         panel.innerHTML = `<button class="back" id="A-back">← Back to the mark</button><span class="k" style="color:${d.color}">${d.n} · ${d.name}</span><h3>${d.path}</h3><p class="muted">${d.line}</p>
           <ul>${d.changes.map(c => `<li>${c}</li>`).join('')}</ul>
           <div class="res"><span>Free resource · ${d.kind}</span><b>${d.resource}</b></div>
           <div class="row"><button class="cta">Start a conversation</button><button class="ghost">See an example</button></div>`;
         panel.classList.add('on'); $('A-back').onclick = () => { api.select(null); api.hover(null); };
       },
-      onFrame: a => { anchors = a; const show = hovered && !api.selected && innerWidth > 820;
-        if (!show) { line.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); return; }
-        const [x, y] = a[hovered], W = A.clientWidth, cx = Math.min(W - 290, x + 120), cy = Math.max(70, Math.min(A.clientHeight - 170, y - 150));
-        call.style.left = cx + 'px'; call.style.top = cy + 'px';
-        line.setAttribute('x1', x); line.setAttribute('y1', y); line.setAttribute('x2', cx); line.setAttribute('y2', cy + 40); line.setAttribute('opacity', 1);
-        dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('opacity', 1); },
     });
     $('A-start').onclick = () => { btns[0].focus(); };
-    // headline decode, terminal and readouts
-    const h = $('A-h'); const spans = h.querySelectorAll('.glitch'); decode(spans[0], 'Who owns', 900); setTimeout(() => decode(spans[1], 'the future?', 1000), 250);
-    const term = $('A-term');
-    (async () => { for (const l of ['> darkwinter.os // cold boot', '> storm index ......... 0.82', '> signal .............. acquired', '> select a part of the mark to begin_']) { const d = document.createElement('div'); d.className = l.includes('select') ? '' : 'dim'; term.append(d);
-      for (let i = 0; i <= l.length; i++) { d.textContent = l.slice(0, i); if (!reduce) await sleep(16); } await sleep(220); } })();
-    const ro = $('A-readout'); let tt = 0; setInterval(() => { tt++; ro.innerHTML = `LAT 41.8781 N · LON 87.6298 W<br>TEMP −${(18 + Math.sin(tt / 9) * 2).toFixed(1)}°C · WIND ${(32 + Math.sin(tt / 5) * 6).toFixed(0)} KM/H<br>STORM INDEX ${(0.82 + Math.sin(tt / 7) * .03).toFixed(2)} · <b>SIGNAL OPEN</b>`; }, 400);
+    // the headline decodes as it fades in, after the mark has formed; one quiet terminal line
+    const spans = $('A-h').querySelectorAll('.glitch'); setTimeout(() => { decode(spans[0], 'Who owns', 1100); setTimeout(() => decode(spans[1], 'the future?', 1200), 300); }, reduce ? 0 : 3600);
+    $('A-term').textContent = '> signal acquired. four ways in._';
   }
 
   /* ================= Concept B ================= */

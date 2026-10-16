@@ -86,6 +86,13 @@ export function makeKit(id) {
       if (kind === 'signal') { bell.triggerAttackRelease(a8, 1.6, t, .6); pad.triggerAttackRelease(k.chord.slice(0, 2), .9, t, .3); }
     },
     settle() { const t = now(); pad.triggerAttackRelease(k.chord.slice(0, 3), 1.6, t, .4); },
+    // one voice per part of the mark (used by the site concepts): core = bell, ring = chord, frame = ignition, lattice = the scale run
+    part(p) { const t = now(), S = k.scale;
+      if (p === 'core') bell.triggerAttackRelease(S[S.length - 1], 1.4, t, .45);
+      if (p === 'ring') pad.triggerAttackRelease(k.chord.slice(0, 3), 1.8, t, .4);
+      if (p === 'frame') { if (kick) kick.triggerAttackRelease(k.bass, '8n', t, .45); pad.triggerAttackRelease([k.chord[0]], 1.2, t, .35); }
+      if (p === 'lattice') S.forEach((n, i) => lead.triggerAttackRelease(n, .1, t + i * .075, .45));
+    },
     start() { drone.triggerAttack(k.drone, now()); lfo.start(); rain?.start(); buzz?.start(); },
     stop() { const t = now(); drone.releaseAll(t); rain?.stop(t + .3); buzz?.stop(t + .3); out.gain.rampTo(0, 1, t); setTimeout(() => nodes.forEach(n => { try { n.dispose(); } catch {} }), 2400); },
   };
